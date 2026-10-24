@@ -43,7 +43,7 @@ Choose exactly one test. The run stops with an error if none or more than one is
 | Flag | Test | Model per SNP / pair |
 | --- | --- | --- |
 | `--add` | Additive | Exact GLS statistic with the null-model `V` |
-| `--dom-gs` | Dominance | Joint GLS fit: fixed effects + additive + dominance term |
+| `--dom` | Dominance | Joint GLS fit: fixed effects + additive + dominance term |
 | `--epis` | Additive-by-additive epistasis | Approximate test for every SNP pair, exact re-test below `--p-approx-cut` |
 | `--epis --marginal` | Additive-by-additive epistasis | Full GLS model per pair with both main effects (slower) |
 
@@ -59,7 +59,7 @@ $$
 
 This is the exact GLS statistic for $$y = Xb + Zxa + \cdots + e$$ at the null $$V$$. It needs only $$s$$ and $$S$$, so it is very fast.
 
-### Dominance test (`--dom-gs`)
+### Dominance test (`--dom`)
 
 For each SNP, `REMMA` fits
 
@@ -67,13 +67,13 @@ $$
 y = Xb + Z x_a a + Z x_d d + Z u_1 + \cdots + Z u_K + e
 $$
 
-by generalized least squares with the fixed $$V$$ from the null model. $$x_a$$ is the centered additive code $$x - 2p$$. $$x_d$$ is the statistical dominance code $$0 \to -2p^2$$, $$1 \to 2pq$$, $$2 \to -2q^2$$, the same as in the dominance GRM `dgrm_gs` (see [GRM](../03_GRM/)). Here $$p$$ is the A1 frequency and $$q = 1 - p$$. A missing genotype gets the mean dominance code of the observed genotypes, so it carries no information (like the mean-imputed additive code). Wald tests (chi-square, 1 df) are reported for both $$a$$ and $$d$$ from the same fit.
+by generalized least squares with the fixed $$V$$ from the null model. $$x_a$$ is the centered additive code $$x - 2p$$. $$x_d$$ is the statistical dominance code $$0 \to -2p^2$$, $$1 \to 2pq$$, $$2 \to -2q^2$$, the same as in the dominance GRM (`--grm-type dom`) (see [GRM](../03_GRM/)). Here $$p$$ is the A1 frequency and $$q = 1 - p$$. A missing genotype gets the mean dominance code of the observed genotypes, so it carries no information (like the mean-imputed additive code). Wald tests (chi-square, 1 df) are reported for both $$a$$ and $$d$$ from the same fit.
 
 With this coding, $$a$$ is the allele substitution effect, the quantity estimated by an ordinary additive GWAS, and $$d$$ is the dominance deviation. The genotypic additive effect (half the difference between the two homozygotes) is $$a - d(q - p)$$.
 
 **Non-identifiable SNPs.** If one of the three genotype classes is absent among the analysed individuals, or the two codes are collinear after adjusting for the fixed effects, the dominance effect cannot be estimated. `REMMA` then reports `beta_dom`, `se_dom` and `p_dom` as `nan`, and the `_add` columns hold the additive-only test (the same statistic as `--add`). The log counts these SNPs.
 
-**Small genotype classes (`--min-geno-count N`).** A dominance effect estimated from a very small genotype class (for example a few minor-allele homozygotes) can give an extreme `p_dom`. With `--min-geno-count N` (`N > 0`), the joint fit is only done when each genotype class `0`/`1`/`2` has at least `N` analysed individuals with a non-missing genotype; otherwise the SNP is treated exactly like a non-identifiable SNP (`_dom` columns `nan`, `_add` columns from the additive-only test). The default `0` turns the rule off (only an absent class triggers the fallback). The log reports the setting and how many tested SNPs it affected. The rule applies to `--dom-gs` only: `--epis` uses additive codes and has no dominance term, so it ignores the option (with a warning).
+**Small genotype classes (`--min-geno-count N`).** A dominance effect estimated from a very small genotype class (for example a few minor-allele homozygotes) can give an extreme `p_dom`. With `--min-geno-count N` (`N > 0`), the joint fit is only done when each genotype class `0`/`1`/`2` has at least `N` analysed individuals with a non-missing genotype; otherwise the SNP is treated exactly like a non-identifiable SNP (`_dom` columns `nan`, `_add` columns from the additive-only test). The default `0` turns the rule off (only an absent class triggers the fallback). The log reports the setting and how many tested SNPs it affected. The rule applies to `--dom` only: `--epis` uses additive codes and has no dominance term, so it ignores the option (with a warning).
 
 ### Epistasis test (`--epis`)
 
@@ -127,8 +127,8 @@ All GRMs must list the same individuals in the same order. GRMs are referenced b
 
 | Random effect | How to build it |
 | --- | --- |
-| Additive | `fastgma --make-grm --grm-type agrm` |
-| Dominance | `fastgma --make-grm --grm-type dgrm_gs` |
+| Additive | `fastgma --make-grm --grm-type add ` |
+| Dominance | `fastgma --make-grm --grm-type dom` |
 | Additive × additive | `fastgma --process-grm --make-epis --prefix1 <add> --prefix2 <add>` |
 
 See [GRM](../03_GRM/) for details. A single additive GRM is also allowed.
@@ -166,7 +166,7 @@ $$
 
 so GRMs of different scale (for example an $$A \circ A$$ epistatic GRM, whose mean diagonal can be far from 1) are comparable. This is the definition used by [fastREML](../09_FASTREML/) and [UVLMM](../04_UVLMM/). The $$d_k$$ are written to the log. SEs are from the delta method on the inverse AI matrix. `<out>.var` holds the unscaled variances, so $$\sigma^2_k / \sum \sigma^2$$ (the convention of GCTA `--reml`) can be computed from it.
 
-The example output below is from the mouse data (`example/mouse/geno/plink`, `example/mouse/pheno/pheno_simu.txt`, `--trait trait --covar e1 --class c1`) with the GRMs `add` (`agrm`), `dom` (`dgrm_gs`) and `axa` ($$\text{add} \circ \text{add}$$):
+The example output below is from the mouse data (`example/mouse/geno/plink`, `example/mouse/pheno/pheno_simu.txt`, `--trait trait --covar e1 --class c1`) with the GRMs `add` (`--grm-type add`), `dom` (`--grm-type dom`) and `axa` ($$\text{add} \circ \text{add}$$):
 
 ```
 component	variance	se
@@ -204,7 +204,7 @@ type	term	levels	effect	se
 chr snp pos a1 a2 af N beta se p
 ```
 
-### `--dom-gs`
+### `--dom`
 
 ```
 chr snp pos a1 a2 af N beta_add se_add p_add beta_dom se_dom p_dom
@@ -237,11 +237,11 @@ Only pairs in which both SNPs pass the filters are written. Without `--marginal`
 | `--trait` | — | Trait column, exactly one (**required**) |
 | `--covar`, `--class` | none | Covariate and class columns |
 | `--missing-data` | `NA NaN nan N/A ...` | Missing-value tokens in the data file |
-| `--add` / `--dom-gs` / `--epis` | — | The test (exactly one) |
+| `--add` / `--dom` / `--epis` | — | The test (exactly one) |
 | `--marginal` | off | With `--epis`: full GLS model per pair |
 | `--maf` | `0.01` | Keep SNPs with $$\min(p, 1 - p)$$ at or above this, in `[0, 0.5]` |
 | `--missing-rate` | `0.05` | Keep SNPs with missing rate at or below this, in `[0, 1]` |
-| `--min-geno-count` | `0` | `--dom-gs`: minimum number of individuals in each genotype class for the dominance test; otherwise `_dom` is `nan` and the additive-only test is reported (`0` = off) |
+| `--min-geno-count` | `0` | `--dom`: minimum number of individuals in each genotype class for the dominance test; otherwise `_dom` is `nan` and the additive-only test is reported (`0` = off) |
 | `--snp-set <first> <last>` | — | Test SNPs from the first to the last SNP ID (inclusive); with `--epis`, pairs whose first SNP is in this set |
 | `--parallel <m> <i>` | — | Split the scan into `m` parts and run part `i` (1-based); with `--epis`, parts hold about equal numbers of pairs |
 | `--p-cut` | `1` | Write SNPs/pairs whose final p is at or below this. For dominance a row is kept if `p_add` or `p_dom` passes. `1` writes all |
@@ -254,7 +254,7 @@ Only pairs in which both SNPs pass the filters are written. Without `--marginal`
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--npart-snp` | `20` | Number of chunks the tested SNPs are read in by `--add` and `--dom-gs` (memory only; not used by `--epis`) |
+| `--npart-snp` | `20` | Number of chunks the tested SNPs are read in by `--add` and `--dom` (memory only; not used by `--epis`) |
 | `--start-pos` | `0` | First tested SNP (0-based index in the `.bim` file) |
 | `--end-pos` | `-1` | End of the tested SNPs (0-based, exclusive). `-1`, or a value above the number of SNPs, means the last SNP |
 | `--num-random-snp` | `10000` | `--epis`: random SNP pairs for the $$\gamma$$ calibration; capped at the number of SNPs |
@@ -271,8 +271,8 @@ Set the environment variable `FASTGMA_LOG_LEVEL=debug` to log per-chunk progress
 ### Build the GRMs
 
 ```bash
-fastgma --make-grm --grm-type agrm    --bfile test --out output/add
-fastgma --make-grm --grm-type dgrm_gs --bfile test --out output/dom
+fastgma --make-grm --grm-type add --bfile test --out output/add
+fastgma --make-grm --grm-type dom --bfile test --out output/dom
 fastgma --process-grm --make-epis --prefix1 output/add --prefix2 output/add --out output/axa
 ```
 
@@ -293,7 +293,7 @@ fastgma --remma --add \
 ### Dominance test
 
 ```bash
-fastgma --remma --dom-gs \
+fastgma --remma --dom \
   --bfile test \
   --mgrm output/add output/dom output/axa \
   --data test_simu_pheno.txt \

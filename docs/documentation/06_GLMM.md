@@ -48,7 +48,7 @@ $$
 
 is fitted by generalized least squares. Both the additive effect $$a$$ and the dominance effect $$d$$ get a Wald test (chi-square, 1 df). Each effect is adjusted for the other, so `p_add` is not the p-value of an additive-only scan. Effects are on the logit (log-odds) scale. `GLMM` has no separate additive-only test.
 
-Let $$x$$ be the count of the A1 allele, $$p$$ the A1 frequency and $$q = 1 - p$$. The additive code is $$x - 2p$$, with missing genotypes set to $$2p$$. The dominance code is the statistical coding $$0 \to -2p^2$$, $$1 \to 2pq$$, $$2 \to -2q^2$$, the same as in the dominance GRM `dgrm_gs`. A missing genotype gets the mean dominance code of the observed genotypes. With this coding, $$a$$ is the allele substitution effect and $$d$$ the dominance deviation, as in [REMMA](../05_REMMA/). The flag `--dom-gs` names this test; it is optional, because `GLMM` has no other test.
+Let $$x$$ be the count of the A1 allele, $$p$$ the A1 frequency and $$q = 1 - p$$. The additive code is $$x - 2p$$, with missing genotypes set to $$2p$$. The dominance code is the statistical coding $$0 \to -2p^2$$, $$1 \to 2pq$$, $$2 \to -2q^2$$, the same as in the dominance GRM (`--grm-type dom`). A missing genotype gets the mean dominance code of the observed genotypes. With this coding, $$a$$ is the allele substitution effect and $$d$$ the dominance deviation, as in [REMMA](../05_REMMA/). The flag `--dom` names this test; it is optional, because `GLMM` has no other test.
 
 **Non-identifiable SNPs.** If one of the three genotype classes is absent, or the two codes are collinear after adjusting for the fixed effects, the dominance effect cannot be estimated. `beta_dom`, `se_dom` and `p_dom` are then `nan`, and the `_add` columns hold the additive-only test. The log counts these SNPs. These rules are the same as in [REMMA](../05_REMMA/).
 
@@ -136,7 +136,7 @@ The log reports each PQL iteration and whether the null model converged. Two war
 | `--grm` | — | GRM prefix (**required**) |
 | `--bfile` | — | PLINK binary prefix (**required**) |
 | `--out` | — | Output prefix (**required**) |
-| `--dom-gs` | — | The additive + dominance test (optional; it is the only test) |
+| `--dom` | — | The additive + dominance test (optional; it is the only test) |
 | `--covar`, `--class` | none | Covariate and class columns |
 | `--missing-data` | `NA NaN nan N/A ...` | Missing-value tokens in the data file |
 | `--maf` | `0.01` | Keep SNPs with $$\min(p, 1 - p)$$ at or above this, in `[0, 0.5]` |
@@ -169,7 +169,7 @@ Set the environment variable `FASTGMA_LOG_LEVEL=debug` to log the inner AI-REML 
 ```bash
 fastgma --make-grm --bfile test --out output/test
 
-fastgma --glmm --dom-gs \
+fastgma --glmm --dom \
   --grm output/test \
   --bfile test \
   --data test_simu_pheno.txt \
@@ -186,7 +186,7 @@ Every job refits the same null model, so the results match a single full run.
 
 ```bash
 for i in 1 2 3 4; do
-  fastgma --glmm --dom-gs --grm output/test --bfile test \
+  fastgma --glmm --dom --grm output/test --bfile test \
     --data test_simu_pheno.txt --trait disease \
     --parallel 4 $i --out output/test_glmm
 done

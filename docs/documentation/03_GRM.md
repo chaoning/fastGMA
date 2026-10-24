@@ -25,10 +25,10 @@ Choose the matrix with `--grm-type`. Let $$x$$ be the genotype dosage (0/1/2 cop
 
 | `--grm-type` | Matrix | Genotype coding for each SNP | GCTA equivalent |
 | --- | --- | --- | --- |
-| `agrm` (default) | Additive | $$x - 2p$$ | `--make-grm` |
-| `dgrm_gs` | Dominance, breeding-value ("statistical") coding | $$0 \to -2p^2$$, $$1 \to 2pq$$, $$2 \to -2q^2$$ | `--make-grm-d` |
+| `add` (default) | Additive | $$x - 2p$$ | `--make-grm` |
+| `dom` | Dominance, breeding-value ("statistical") coding | $$0 \to -2p^2$$, $$1 \to 2pq$$, $$2 \to -2q^2$$ | `--make-grm-d` |
 
-Under Hardy–Weinberg equilibrium the dominance code is uncorrelated with the additive code, so fitting `agrm` and `dgrm_gs` together splits the genetic variance into the classical additive and dominance variances.
+Under Hardy–Weinberg equilibrium the dominance code is uncorrelated with the additive code, so fitting the `add` and `dom` GRMs together splits the genetic variance into the classical additive and dominance variances.
 
 The scaling is set with `--code-type`:
 
@@ -41,7 +41,7 @@ Both additive scalings are special cases of `--alpha`, which assumes that the va
 
 $$A_{jk} = \frac{\sum_i v_i^{\alpha} (x_{ij} - 2p_i)(x_{ik} - 2p_i)}{\sum_i v_i^{1+\alpha}},$$
 
-so that the expected diagonal is 1 (with `--ffile`, $$v_i$$ is the observed variance of feature $$i$$). `--alpha -1` gives `--code-type 2` and `--alpha 0` gives `--code-type 1`, with identical output files. Under $$\alpha = -1$$ every SNP explains the same share of the genetic variance; values above $$-1$$ shift the variance toward common SNPs and values below $$-1$$ toward rare SNPs. Speed et al. (2017, *Nature Genetics* 49:986–992) recommended $$\alpha = -0.25$$ for human complex traits. To choose $$\alpha$$ for your data, build GRMs over a grid of values (for example −1, −0.75, −0.5, −0.25, 0) and compare the REML log-likelihoods. `--alpha` cannot be combined with `--code-type` and applies only to `agrm`. With missing genotypes, each element is rescaled by $$M/N_{jk}$$ as for the other scalings (see "Quality control and missing genotypes" below).
+so that the expected diagonal is 1 (with `--ffile`, $$v_i$$ is the observed variance of feature $$i$$). `--alpha -1` gives `--code-type 2` and `--alpha 0` gives `--code-type 1`, with identical output files. Under $$\alpha = -1$$ every SNP explains the same share of the genetic variance; values above $$-1$$ shift the variance toward common SNPs and values below $$-1$$ toward rare SNPs. Speed et al. (2017, *Nature Genetics* 49:986–992) recommended $$\alpha = -0.25$$ for human complex traits. To choose $$\alpha$$ for your data, build GRMs over a grid of values (for example −1, −0.75, −0.5, −0.25, 0) and compare the REML log-likelihoods. `--alpha` cannot be combined with `--code-type` and applies only to `add`. With missing genotypes, each element is rescaled by $$M/N_{jk}$$ as for the other scalings (see "Quality control and missing genotypes" below).
 
 For the dominance GRM the two `--code-type` choices apply, using the variance of the dominance coding instead of $$2pq$$. An epistatic GRM (for example additive-by-additive) is built from existing GRMs with `--process-grm --make-epis` (see Section 3).
 
@@ -60,7 +60,7 @@ With `--ffile`:
 - `<prefix>.bim` needs one line per feature; only the line count is used.
 - Each feature is centered by its mean and scaled by its standard deviation, both computed over the observed values. Negative values are fine.
 - Missing values are written as any of the `--missing-geno` tokens (default `NA`, `NaN`, `N/A` and similar).
-- `--maf` does not apply, and only `--grm-type agrm` is supported.
+- `--maf` does not apply, and only `--grm-type add` is supported.
 
 ### Selecting individuals and SNPs
 
@@ -108,7 +108,7 @@ Missing genotypes are handled as in GCTA. A missing call contributes nothing to 
 | --- | --- | --- |
 | `--bfile` / `--ffile` | — | Input prefix (exactly one is required) |
 | `--out` | — | Output prefix (required) |
-| `--grm-type` | `agrm` | `agrm` or `dgrm_gs` |
+| `--grm-type` | `add` | `add` or `dom` |
 | `--code-type` | `2` | `2`: per-SNP standardization; `1`: VanRaden-type scaling |
 | `--alpha` | `-1` | Additive GRM with SNP-effect variance proportional to $$(2pq)^\alpha$$; excludes `--code-type` |
 | `--maf` | `0.01` | Minimum minor allele frequency (BED input) |
@@ -216,7 +216,7 @@ Notes:
 | --- | --- |
 | `--make-grm` | `--make-grm` |
 | `--make-grm --code-type 1` | `--make-grm-alg 1` |
-| `--make-grm --grm-type dgrm_gs` | `--make-grm-d` |
+| `--make-grm --grm-type dom` | `--make-grm-d` |
 | `--keep`, `--remove`, `--extract`, `--exclude`, `--chr` | same options |
 | `--read-freq` | `--update-freq` |
 | `--process-grm --merge` | concatenating `--make-grm-part` outputs |
@@ -290,8 +290,8 @@ With 427 individuals the log-likelihood changes by only 0.04 over the grid, so t
 ### Additive, dominance and epistatic GRMs for a multi-GRM model
 
 ```bash
-fastgma --make-grm --grm-type agrm    --bfile test --out output/add
-fastgma --make-grm --grm-type dgrm_gs --bfile test --out output/dom
+fastgma --make-grm --grm-type add --bfile test --out output/add
+fastgma --make-grm --grm-type dom --bfile test --out output/dom
 fastgma --process-grm --make-epis --prefix1 output/add --prefix2 output/add --out output/axa
 
 fastgma --uvlmm --model multi-grm --mgrm output/add output/dom output/axa \

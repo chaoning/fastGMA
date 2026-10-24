@@ -351,7 +351,7 @@ fastgma --mvlmm \
 ### Dominance and additive GRMs, with predicted random effects
 
 ```bash
-fastgma --make-grm --bfile test --grm-type dgrm_gs --out output/test_dom
+fastgma --make-grm --bfile test --grm-type dom --out output/test_dom
 
 fastgma --mvlmm \
   --data test_simu_pheno.txt \
