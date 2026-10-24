@@ -41,7 +41,7 @@ Both additive scalings are special cases of `--alpha`, which assumes that the va
 
 $$A_{jk} = \frac{\sum_i v_i^{\alpha} (x_{ij} - 2p_i)(x_{ik} - 2p_i)}{\sum_i v_i^{1+\alpha}},$$
 
-so that the expected diagonal is 1 (with `--ffile`, $$v_i$$ is the observed variance of feature $$i$$). `--alpha -1` gives `--code-type 2` and `--alpha 0` gives `--code-type 1`, with identical output files. Under $$\alpha = -1$$ every SNP explains the same share of the genetic variance; values above $$-1$$ shift the variance toward common SNPs and values below $$-1$$ toward rare SNPs. Speed et al. (2017, *Nature Genetics* 49:986–992) recommended $$\alpha = -0.25$$ for human complex traits. To choose $$\alpha$$ for your data, build GRMs over a grid of values (for example −1, −0.75, −0.5, −0.25, 0) and compare the REML log-likelihoods. `--alpha` cannot be combined with `--code-type` and applies only to `add`. With missing genotypes, each element is rescaled by $$M/N_{jk}$$ as for the other scalings (see "Quality control and missing genotypes" below).
+so that the expected diagonal is 1 (for `--ffile` input see "Inputs" below). `--alpha -1` gives `--code-type 2` and `--alpha 0` gives `--code-type 1`, with identical output files. Under $$\alpha = -1$$ every SNP explains the same share of the genetic variance; values above $$-1$$ shift the variance toward common SNPs and values below $$-1$$ toward rare SNPs. Speed et al. (2017, *Nature Genetics* 49:986–992) recommended $$\alpha = -0.25$$ for human complex traits. To choose $$\alpha$$ for your data, build GRMs over a grid of values (for example −1, −0.75, −0.5, −0.25, 0) and compare the REML log-likelihoods. `--alpha` cannot be combined with `--code-type` and applies only to `add`. With missing genotypes, each element is rescaled by $$M/N_{jk}$$ as for the other scalings (see "Quality control and missing genotypes" below).
 
 For the dominance GRM the two `--code-type` choices apply, using the variance of the dominance coding instead of $$2pq$$. An epistatic GRM (for example additive-by-additive) is built from existing GRMs with `--process-grm --make-epis` (see Section 3).
 
@@ -58,7 +58,8 @@ With `--ffile`:
 
 - `<prefix>.fmat` has one row per feature and one whitespace-separated column per sample, in `.fam` order. It has no header and no row names.
 - `<prefix>.bim` needs one line per feature; only the line count is used.
-- Each feature is centered by its mean and scaled by its standard deviation, both computed over the observed values. Negative values are fine.
+- Each feature is centered by its mean over the observed values. With the default `--alpha -1` (`--code-type 2`) it is also scaled by its standard deviation, so the GRM does not depend on the units of the features. Negative values are fine.
+- `--code-type 1` and `--alpha` use the observed variance of feature $$i$$ as $$v_i$$ in place of $$2p_i q_i$$. Multiplying one feature by a constant $$c$$ multiplies its contribution to the GRM by $$c^{2(1+\alpha)}$$, so only $$\alpha = -1$$ is independent of the units. Use other values only when all features are on a common scale (for example log-expression from one assay). $$\alpha$$ then sets how strongly features with a large variance dominate the GRM; unlike for SNPs, it has no population-genetic interpretation. With complete data the mean diagonal is exactly 1 for every $$\alpha$$.
 - Missing values are written as any of the `--missing-geno` tokens (default `NA`, `NaN`, `N/A` and similar).
 - `--maf` does not apply, and only `--grm-type add` is supported.
 
