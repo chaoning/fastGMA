@@ -1,0 +1,112 @@
+# Theme settings
+remote_theme: allejo/jekyll-docs-theme
+
+# Project information
+name: fastGMA
+description: "Fast genomic mixed-model analysis for GWAS and GP of complex traits"
+
+project:
+  version: 1.0.0
+  download_url: https://github.com/chaoning/fastGMA/raw/refs/heads/main/app/linux/fastgma
+  download_text: "Download fastGMA"
+
+# License information
+license:
+  software: "free for academic and non-commercial use"
+  software_url: https://github.com/chaoning/fastGMA/blob/main/LICENSE.md
+
+collections:
+  documentation:
+    output: true
+    permalink: /documentation/:name/
+  
+# Navigation menu
+nav:
+  - title: "Installation"
+    url: /documentation/02_installation/
+  - title: "GRM"
+    url: /documentation/03_GRM/
+  - title: "uvLMM"
+    url: /documentation/04_UVLMM/
+  - title: "REMMA"
+    url: /documentation/05_REMMA/
+  - title: "GLMM"
+    url: /documentation/06_GLMM/
+  - title: "mvLMM"
+    url: /documentation/07_MVLMM/
+  - title: "lonGWAS"
+    url: /documentation/08_LONGWAS/
+  - title: "fastREML"
+    url: /documentation/09_FASTREML/
+
+
+# Navigation links
+links:
+  header:
+    - title: GitHub
+      icon: github
+      brand: true
+      url: https://github.com/chaoning/fastGMA
+  homepage:
+    - title: "View on GitHub"
+      icon: github
+      brand: true
+      url: https://github.com/chaoning/fastGMA
+  footer:
+    - title: GitHub
+      icon: github
+      brand: true
+      url: https://github.com/chaoning/fastGMA
+    - title: Report Issues
+      icon: bug
+      url: https://github.com/chaoning/fastGMA/issues
+
+# UI theme settings
+ui:
+  mode: 'auto'  # Options: 'auto', 'dark', 'light'
+  brand:
+    dark: "#00ceff"
+    light: "#d32f2f"  # Adjusted to a softer red
+  border_color:
+    dark: "#5f5f5f"
+    light: "#dee2e6"
+  header:
+    trianglify: true
+    dark:
+      color1: "#0a1f33"  # Adjusted for a more cohesive color scheme
+      color2: "#2c4964"
+    light:
+      color1: "#1b0530"
+      color2: "#88435c"
+  masthead:
+    color:
+      dark: "#ffffff"
+      light: "#ffffff"
+    align:
+      homepage: "center"
+      page: "left"
+
+# Social media links
+social:
+  github:
+    user: chaoning
+    repo: fastGMA
+  twitter:
+    enabled: false  # Set to false to disable Twitter integration
+  facebook:
+    enabled: false  # Set to false to disable Facebook integration
+
+# Website analytics
+# analytics:
+#   google: ""  # Add your Google Analytics tracking ID here if needed
+
+# Markdown parser
+markdown: kramdown
+
+# Exclude unnecessary files to improve build performance
+exclude:
+  - LICENSE.md
+  - README.md
+  - .gitignore
+  - Gemfile
+  - Gemfile.lock
