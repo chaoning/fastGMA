@@ -32,7 +32,7 @@ description: Fast genomic mixed-model analysis for GWAS and GP of complex traits
 - **Genotypes:** PLINK binary files (`--bfile <prefix>` for `.bed`, `.bim`, `.fam`).
 - **Phenotypes and covariates:** a whitespace-separated table with a header row and the individual ID in the first column. Traits, covariates and class variables are selected by column name.
 - **GRMs:** three files that share one prefix, given as `--grm <prefix>`:
-  - `<prefix>.grm.bin`: the lower triangle of the GRM including the diagonal, stored row by row (`A_11, A_21, A_22, A_31, ...`) as little-endian float32.
+  - `<prefix>.grm.bin`: the lower triangle of the GRM including the diagonal, stored row by row ($$A_{11}, A_{21}, A_{22}, A_{31}, \ldots$$) as little-endian float32.
   - `<prefix>.grm.id`: one line per individual (`FID IID`), in the row order of the matrix.
   - `<prefix>.grm.N.bin`: the number of SNPs used for each pair of individuals, in the same layout as `.grm.bin`.
 

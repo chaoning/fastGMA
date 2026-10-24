@@ -18,23 +18,25 @@ Run `fastgma -h 6` for the full option list.
 
 ## 1. What it does
 
-With `t` traits, the records of all traits are modelled jointly:
+With $$t$$ traits, the records of all traits are modelled jointly:
 
-```
-y = X b + Z u + e
-Var(u) = Sigma_g ⊗ G
-Var(e) = Sigma_e ⊗ I
-```
+$$
+\begin{aligned}
+y &= Xb + Zu + e \\
+\operatorname{Var}(u) &= \Sigma_g \otimes G \\
+\operatorname{Var}(e) &= \Sigma_e \otimes I
+\end{aligned}
+$$
 
-`y` stacks the records of all traits, trait by trait. `X b` holds the fixed effects of each trait (an intercept plus that trait's covariates and class variables). `u` is the polygenic effect with GRM `G`, and `e` is the residual. `Sigma_g` and `Sigma_e` are `t x t` covariance matrices: their diagonals are the genetic and residual variances of the traits, and their off-diagonals the covariances between traits. Each extra GRM (`--mgrm`) or non-genetic random effect (`--random`) adds one more `t x t` covariance matrix.
+$$y$$ stacks the records of all traits, trait by trait. $$Xb$$ holds the fixed effects of each trait (an intercept plus that trait's covariates and class variables). $$u$$ is the polygenic effect with GRM $$G$$, and $$e$$ is the residual. $$\Sigma_g$$ and $$\Sigma_e$$ are $$t \times t$$ covariance matrices: their diagonals are the genetic and residual variances of the traits, and their off-diagonals the covariances between traits. Each extra GRM (`--mgrm`) or non-genetic random effect (`--random`) adds one more $$t \times t$$ covariance matrix.
 
 Each trait uses its own non-missing records, so the traits do not need to be measured on the same individuals (with `--solver general`). Records of different traits from the same individual share the residual covariance.
 
 **Null model.** All covariance matrices are estimated by REML with the average-information (AI) algorithm. When the AI step would leave the valid parameter space (a covariance matrix that is not positive definite), the update is chosen, by the REML log-likelihood, among an AI step blended with the EM step, the AI step shortened to 90% of the distance to the boundary, and an AI step in the Cholesky parameterisation. This lets the fit reach estimates on the boundary, such as a genetic correlation near ±1 or a variance near 0. If a covariance matrix ends close to singular, the log says so. Iteration stops when the parameter change is below `--cc-par0`, the gradient norm is below `--cc-gra0`, or the change in log-likelihood is below `--cc-logl0`, or after `--maxiter0` iterations.
 
-**SNP test.** For each SNP, the centered count of `a1` is added as a fixed effect with one coefficient per trait, and the covariance matrices are kept at their null-model values. The `t` effects are tested jointly ("no effect on any trait") with a score/Wald statistic that follows a chi-square distribution with `t` degrees of freedom.
+**SNP test.** For each SNP, the centered count of `a1` is added as a fixed effect with one coefficient per trait, and the covariance matrices are kept at their null-model values. The $$t$$ effects are tested jointly ("no effect on any trait") with a score/Wald statistic that follows a chi-square distribution with $$t$$ degrees of freedom.
 
-**Approximate test.** The exact test needs `F = S' P S` (the `t x t` information matrix of the SNP effects) for every SNP. `MVLMM` approximates it by `F ≈ (x'x) · Gamma`, where `x` is the centered SNP and `Gamma` is the mean of `F / x'x` over `--num-random-snp` random SNPs that pass the MAF and missing-rate filters. `F` does not depend on the phenotypes, so no SNP is excluded from the calibration for being associated. The random SNPs are drawn from the whole genotype file with `--seed` (default `42`), so `Gamma` is the same in reruns and in every `--parallel` / `--snp-set` job. SNPs with approximate p below `--p-approx-cut` are re-tested exactly. `--p-approx-cut 1` gives the exact test for every SNP; `--p-approx-cut 0` keeps the approximate test only.
+**Approximate test.** The exact test needs $$F = S'PS$$ (the $$t \times t$$ information matrix of the SNP effects) for every SNP. `MVLMM` approximates it by $$F \approx (x'x)\, \Gamma$$, where $$x$$ is the centered SNP and $$\Gamma$$ is the mean of $$F / x'x$$ over `--num-random-snp` random SNPs that pass the MAF and missing-rate filters. $$F$$ does not depend on the phenotypes, so no SNP is excluded from the calibration for being associated. The random SNPs are drawn from the whole genotype file with `--seed` (default `42`), so $$\Gamma$$ is the same in reruns and in every `--parallel` / `--snp-set` job. SNPs with approximate p below `--p-approx-cut` are re-tested exactly. `--p-approx-cut 1` gives the exact test for every SNP; `--p-approx-cut 0` keeps the approximate test only.
 
 > **Choosing `--p-approx-cut`.** The exact test is computed in batches and is cheap for samples below about 10,000 individuals: use `--p-approx-cut 1` there. The approximation works well in large samples of distantly related individuals and less well in small or structured samples. In the 1,062-individual mouse example, the approximate and exact `-log10 p` correlated at 0.94 and the only SNP with exact p < 1e-3 was not re-tested at the default cut (it was at `--p-approx-cut 0.01`). In a human sample of 427 individuals the correlation was 0.99996. If you use the approximate test on structured data, choose a larger cut such as `0.01`.
 
@@ -45,7 +47,7 @@ The fitting algorithm is chosen with `--solver` (default `general`):
 | `--solver` | Method | Notes |
 | --- | --- | --- |
 | `general` (default) | Dense AI-REML on the covariance matrix of all records (one row per record and trait) | Allows missing trait values, several GRMs (`--mgrm`), non-genetic random effects (`--random`), per-trait covariates and `--predict` |
-| `eigen` | The GRM is eigendecomposed once (`G = U Λ U'`) and `y` and `X` are rotated by `U'`. The covariance matrix becomes block diagonal with one `t x t` block `λ_i Sigma_g + Sigma_e` per individual, so REML costs `O(n)` per evaluation | Needs complete (balanced) data and exactly one `--grm`. Supports `--refit` |
+| `eigen` | The GRM is eigendecomposed once ($$G = U \Lambda U'$$) and $$y$$ and $$X$$ are rotated by $$U'$$. The covariance matrix becomes block diagonal with one $$t \times t$$ block $$\lambda_i \Sigma_g + \Sigma_e$$ per individual, so REML costs $$O(n)$$ per evaluation | Needs complete (balanced) data and exactly one `--grm`. Supports `--refit` |
 
 The two solvers maximise the same likelihood. On data that both can fit they give the same `.var`, `.sln`, `.h2`, `.rg` and `.assoc` files.
 
@@ -58,7 +60,7 @@ Rules checked at start-up. Each violation stops the run with an error; the eigen
 - `--predict` is not available with `--solver eigen`.
 - `--refit` is accepted only with `--solver eigen`.
 
-**Per-SNP refit (`--solver eigen --refit`).** Each SNP that is tested exactly (every SNP with `--p-approx-cut 1`) gets its own REML fit of `Sigma_g` and `Sigma_e` with the SNP in the model, starting from the null estimates. The `p` column is then the joint Wald test with the re-estimated covariance matrices. An approximate likelihood-ratio p-value `p_lrt` (ML log-likelihoods evaluated at the REML estimates of the two models) and the convergence diagnostics `cc_par` / `cc_gra` are added. Without `--refit` the covariance matrices stay at the null estimates for every SNP.
+**Per-SNP refit (`--solver eigen --refit`).** Each SNP that is tested exactly (every SNP with `--p-approx-cut 1`) gets its own REML fit of $$\Sigma_g$$ and $$\Sigma_e$$ with the SNP in the model, starting from the null estimates. The `p` column is then the joint Wald test with the re-estimated covariance matrices. An approximate likelihood-ratio p-value `p_lrt` (ML log-likelihoods evaluated at the REML estimates of the two models) and the convergence diagnostics `cc_par` / `cc_gra` are added. Without `--refit` the covariance matrices stay at the null estimates for every SNP.
 
 ## 3. Inputs
 
@@ -143,7 +145,7 @@ residual	2	2	1.15062	0.0563373
 | Column | Meaning |
 | --- | --- |
 | `component` | `G` for the `--grm` effect, the prefix basename for each `--mgrm` GRM, the column name for each non-genetic `--random` effect, and `residual` last |
-| `row`, `col` | Trait numbers (1-based, in `--trait` order). `i i` is the variance of trait `i`; `i j` is the covariance between traits `i` and `j` |
+| `row`, `col` | Trait numbers (1-based, in `--trait` order). `row` = `col` = $$i$$ is the variance of trait $$i$$; `row` = $$i$$, `col` = $$j$$ is the covariance between traits $$i$$ and $$j$$ |
 | `variance`, `se` | Estimate and standard error (square root of the diagonal of the inverse AI matrix at the estimates) |
 
 The blocks appear in the order `--mgrm` GRMs, `--grm`, non-genetic effects, `residual`.
@@ -165,7 +167,7 @@ trait1	trait2	rg	se
 y2	y1	0.758612	0.0555244
 ```
 
-Each GRM block `m` is weighted by `d_m`, the mean diagonal element of its GRM over the analysed records (pooled over all traits; with complete data, the mean diagonal of the GRM over the individuals), as in `UVLMM`, `REMMA` and `--fast-reml`; non-genetic effects and the residual have `d = 1`. `h2` of a trait is `sum_GRM d_m S_m,ii / sum_all d_m S_m,ii`, where `S_m,ii` is its variance in block `m`. A non-genetic random effect such as `cage` therefore counts in the denominator only. `rg` between two traits is computed from the weighted sum of the GRM blocks, `Sg = sum_GRM d_m S_m`: `rg = Sg_ij / sqrt(Sg_ii * Sg_jj)`; with a single GRM, `d` cancels and `rg` is unchanged. The `d_m` are written to the log. Both SEs use the delta method with `<out>.var_cov`. `.rg` has one row per pair (the later trait in `--trait` order first) and only a header for a single trait.
+Each GRM block $$m$$ is weighted by $$d_m$$, the mean diagonal element of its GRM over the analysed records (pooled over all traits; with complete data, the mean diagonal of the GRM over the individuals), as in `UVLMM`, `REMMA` and `--fast-reml`; non-genetic effects and the residual have $$d = 1$$. The `h2` of trait $$i$$ is $$\sum_{m \in \text{GRM}} d_m S_{m,ii} \big/ \sum_{m} d_m S_{m,ii}$$, where $$S_{m,ii}$$ is its variance in block $$m$$ and the denominator runs over all blocks. A non-genetic random effect such as `cage` therefore counts in the denominator only. The `rg` between traits $$i$$ and $$j$$ is computed from the weighted sum of the GRM blocks, $$S_g = \sum_{m \in \text{GRM}} d_m S_m$$: $$r_g = S_{g,ij} / \sqrt{S_{g,ii}\, S_{g,jj}}$$; with a single GRM, $$d$$ cancels and `rg` is unchanged. The $$d_m$$ are written to the log. Both SEs use the delta method with `<out>.var_cov`. `.rg` has one row per pair (the later trait in `--trait` order first) and only a header for a single trait.
 
 ### `<out>.sln`
 
@@ -381,7 +383,7 @@ Repeat with part indices `2` through `10`, then concatenate `output/test_mvlmm.1
 
 ## 7. Run time and memory
 
-`--solver general` builds dense matrices with one row per record, `N` rows in total (up to `t x n` for `t` traits and `n` individuals). It holds about two `N x N` matrices plus one per GRM (8 bytes per element), and each REML iteration costs `O(N^3)`. It is suited to data sets with up to a few tens of thousands of records. `--solver eigen` costs one `O(n^3)` eigendecomposition and then `O(n)` per REML iteration; the exact SNP test costs `O(n^2)` per SNP for the rotation.
+`--solver general` builds dense matrices with one row per record, $$N$$ rows in total (up to $$tn$$ for $$t$$ traits and $$n$$ individuals). It holds about two $$N \times N$$ matrices plus one per GRM (8 bytes per element), and each REML iteration costs $$O(N^3)$$. It is suited to data sets with up to a few tens of thousands of records. `--solver eigen` costs one $$O(n^3)$$ eigendecomposition and then $$O(n)$$ per REML iteration; the exact SNP test costs $$O(n^2)$$ per SNP for the rotation.
 
 Wall time with 4 threads on a shared node (exact test for every SNP unless noted):
 

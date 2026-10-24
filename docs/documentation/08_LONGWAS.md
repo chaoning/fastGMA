@@ -18,65 +18,67 @@ Run `fastgma -h 7` (or `fastgma --longwas --help`) for the full option list.
 
 ## 1. What it does
 
-Let `y_ij` be record `j` of individual `i`, taken at time `t_ij`. Time is mapped to `[-1, 1]` and expanded in normalized Legendre polynomials `φ_k`. `LonGWAS` fits
+Let $$y_{ij}$$ be record $$j$$ of individual $$i$$, taken at time $$t_{ij}$$. Time is mapped to $$[-1, 1]$$ and expanded in normalized Legendre polynomials $$\phi_k$$. `LonGWAS` fits
 
-```
-y_ij = Σ_{k=0..f} b_k φ_k(t_ij)          fixed mean curve (plus --time-covar / --time-class curves)
-     + c                                 time-independent fixed effects (--covar / --class)
-     + Σ_{k=0..f} s_k x_i φ_k(t_ij)      SNP effect on the curve (tested)
-     + Σ_{k=0..a} u_ik φ_k(t_ij)         additive genetic random regression
-     + Σ_{k=0..p} pe_ik φ_k(t_ij)        permanent environmental random regression
-     + e_ij
+$$
+\begin{aligned}
+y_{ij} = {} & \textstyle\sum_{k=0}^{f} b_k \phi_k(t_{ij}) && \text{fixed mean curve} \\
+& + c && \text{time-independent fixed effects} \\
+& + \textstyle\sum_{k=0}^{f} s_k x_i \phi_k(t_{ij}) && \text{SNP effect on the curve (tested)} \\
+& + \textstyle\sum_{k=0}^{a} u_{ik} \phi_k(t_{ij}) && \text{additive genetic random regression} \\
+& + \textstyle\sum_{k=0}^{p} \mathit{pe}_{ik} \phi_k(t_{ij}) && \text{permanent environmental random regression} \\
+& + e_{ij}
+\end{aligned}
+$$
 
-u  ~ N(0, K_a ⊗ G)      K_a: (a+1) × (a+1) genetic covariance matrix of the coefficients
-pe ~ N(0, K_p ⊗ I)      K_p: (p+1) × (p+1) permanent environmental covariance matrix
-e  ~ N(0, σ²_e I)       one residual variance for all records
-```
+$$
+u \sim N(0, K_a \otimes G), \qquad \mathit{pe} \sim N(0, K_p \otimes I), \qquad e \sim N(0, \sigma^2_e I)
+$$
 
-where `x_i` is the centered genotype of individual `i`, `G` is the additive GRM, and `f`, `a` and `p` are the orders set by `--forder`, `--aorder` and `--porder`.
+where $$x_i$$ is the centered genotype of individual $$i$$, $$G$$ is the additive GRM, and $$f$$, $$a$$ and $$p$$ are the orders set by `--forder`, `--aorder` and `--porder`. $$K_a$$ and $$K_p$$ are the $$(a+1) \times (a+1)$$ and $$(p+1) \times (p+1)$$ covariance matrices of the genetic and permanent environmental coefficients, and $$\sigma^2_e$$ is one residual variance for all records. `--time-covar` and `--time-class` add further fixed curves to the mean curve, and $$c$$ holds the time-independent fixed effects of `--covar` and `--class`.
 
 The Legendre basis is
 
-```
-φ_k(x) = sqrt((2k + 1) / 2) · P_k(x),      x = 2 (t − t_min) / (t_max − t_min) − 1
-```
+$$
+\phi_k(x) = \sqrt{\frac{2k + 1}{2}}\, P_k(x), \qquad x = \frac{2(t - t_{\min})}{t_{\max} - t_{\min}} - 1
+$$
 
-with `P_k` the Legendre polynomial of degree `k`, and `t_min`, `t_max` the smallest and largest time point among the analysed records.
+with $$P_k$$ the Legendre polynomial of degree $$k$$, and $$t_{\min}$$, $$t_{\max}$$ the smallest and largest time point among the analysed records.
 
-The null model (no SNP) is fitted once by REML with a weighted AI/EM algorithm (WEMAI). At each iteration it uses the smallest EM weight that keeps `K_a` and `K_p` positive definite and `σ²_e` positive; if no blend does, the EM step is halved until the update is valid. The SNP scan reuses these variance components (unless `--refit` is given). For each SNP the `f + 1` regression coefficients `s_0 ... s_f` are estimated jointly, and `H0: s_0 = ... = s_f = 0` is tested with a Wald chi-square test with `f + 1` degrees of freedom. A SNP that changes the level, the slope or the shape of the curve can therefore be detected.
+The null model (no SNP) is fitted once by REML with a weighted AI/EM algorithm (WEMAI). At each iteration it uses the smallest EM weight that keeps $$K_a$$ and $$K_p$$ positive definite and $$\sigma^2_e$$ positive; if no blend does, the EM step is halved until the update is valid. The SNP scan reuses these variance components (unless `--refit` is given). For each SNP the $$f + 1$$ regression coefficients $$s_0, \ldots, s_f$$ are estimated jointly, and $$H_0\colon s_0 = \cdots = s_f = 0$$ is tested with a Wald chi-square test with $$f + 1$$ degrees of freedom. A SNP that changes the level, the slope or the shape of the curve can therefore be detected.
 
-The covariance between two time points follows from the coefficient matrices. For example, the additive genetic variance at time `t` is `φ(t)ᵀ K_a φ(t)`, with `φ(t) = (φ_0(t), ..., φ_a(t))ᵀ`. `LonGWAS` writes `K_a`, `K_p` and `σ²_e` to `<out>.var`, and the heritability at each observed time point,
+The covariance between two time points follows from the coefficient matrices. For example, the additive genetic variance at time $$t$$ is $$\phi(t)^\top K_a \phi(t)$$, with $$\phi(t) = (\phi_0(t), \ldots, \phi_a(t))^\top$$. `LonGWAS` writes $$K_a$$, $$K_p$$ and $$\sigma^2_e$$ to `<out>.var`, and the heritability at each observed time point,
 
-```
-h2(t) = d φ_a(t)ᵀ K_a φ_a(t) / (d φ_a(t)ᵀ K_a φ_a(t) + φ_p(t)ᵀ K_p φ_p(t) + σ²_e),
-```
+$$
+h^2(t) = \frac{d\, \phi_a(t)^\top K_a \phi_a(t)}{d\, \phi_a(t)^\top K_a \phi_a(t) + \phi_p(t)^\top K_p \phi_p(t) + \sigma^2_e},
+$$
 
-to `<out>.h2`. Here `d` is the mean diagonal element of the GRM as fitted (including `--val`) over the records, as in the other modules; it puts the additive genetic variance on the scale of the phenotypic variance of a record. It is written to the log.
+to `<out>.h2`. Here $$d$$ is the mean diagonal element of the GRM as fitted (including `--val`) over the records, as in the other modules; it puts the additive genetic variance on the scale of the phenotypic variance of a record. It is written to the log.
 
 ### Solvers
 
 | `--solver` | Method | Data |
 | --- | --- | --- |
 | `general` (default) | REML on the mixed model equations, with the permanent-environment equations absorbed | Any data: individuals may have different numbers of records and different time points |
-| `eigen` | The GRM is eigendecomposed once and the data rotated, so `V` becomes block diagonal with `T × T` blocks | Balanced data only: every individual has exactly one record at each of the same `T` time points (after records with missing values are removed). Otherwise the run stops and suggests `--solver general` |
+| `eigen` | The GRM is eigendecomposed once and the data rotated, so $$V$$ becomes block diagonal with $$T \times T$$ blocks | Balanced data only: every individual has exactly one record at each of the same $$T$$ time points (after records with missing values are removed). Otherwise the run stops and suggests `--solver general` |
 
 Both solvers read the same long-format input and give the same estimates on balanced data. `--solver eigen` does not allow `--predict` or `--use-vmat`. It is the only solver that supports `--refit`.
 
 ### SNP test
 
-For each SNP the test uses the null-model variance components. The exact test needs `F' P F` for the SNP design `F`; `LonGWAS` approximates it by `Γ · s' s`, where `s` is the centered genotype and the `(f+1) × (f+1)` matrix `Γ` is calibrated on `--num-random-snp` random SNPs (drawn with `--seed`, default `42`) that pass the filters and give a well-defined test. `F' P F / s' s` does not depend on the phenotype, so no p-value filter is applied (as in `UVLMM` and `MVLMM`). At least 10% of the random SNPs must qualify, or the run stops. SNPs with approximate p below `--p-approx-cut` are re-tested exactly. `--p-approx-cut 1` gives the exact test for every SNP. With `--solver eigen --refit`, each exactly tested SNP also gets its own REML fit of the variance components with the SNP in the model.
+For each SNP the test uses the null-model variance components. The exact test needs $$F'PF$$ for the SNP design $$F$$; `LonGWAS` approximates it by $$\Gamma\, s's$$, where $$s$$ is the centered genotype and the $$(f+1) \times (f+1)$$ matrix $$\Gamma$$ is calibrated on `--num-random-snp` random SNPs (drawn with `--seed`, default `42`) that pass the filters and give a well-defined test. $$F'PF / s's$$ does not depend on the phenotype, so no p-value filter is applied (as in `UVLMM` and `MVLMM`). At least 10% of the random SNPs must qualify, or the run stops. SNPs with approximate p below `--p-approx-cut` are re-tested exactly. `--p-approx-cut 1` gives the exact test for every SNP. With `--solver eigen --refit`, each exactly tested SNP also gets its own REML fit of the variance components with the SNP in the model.
 
 
 ## 2. Model terms
 
 | Term | Set by | Default | Description |
 | --- | --- | --- | --- |
-| Mean curve | `--forder` | `2` | Fixed regression of order `f` on time (always included) |
-| Time-varying fixed effects | `--time-covar`, `--time-class` | none | Each covariate, or each level of a class variable, gets its own fixed curve of order `f` |
+| Mean curve | `--forder` | `2` | Fixed regression of order $$f$$ on time (always included) |
+| Time-varying fixed effects | `--time-covar`, `--time-class` | none | Each covariate, or each level of a class variable, gets its own fixed curve of order $$f$$ |
 | Time-independent fixed effects | `--covar`, `--class` | none | One effect per covariate or class level, constant over time |
-| SNP effect | `--forder` | `2` | Fixed regression of order `f`, tested with `f + 1` degrees of freedom |
-| Additive genetic effect | `--aorder` | `2` | Random regression of order `a`, covariance `K_a ⊗ G` |
-| Permanent environmental effect | `--porder` | `2` | Random regression of order `p`, covariance `K_p ⊗ I` |
+| SNP effect | `--forder` | `2` | Fixed regression of order $$f$$, tested with $$f + 1$$ degrees of freedom |
+| Additive genetic effect | `--aorder` | `2` | Random regression of order $$a$$, covariance $$K_a \otimes G$$ |
+| Permanent environmental effect | `--porder` | `2` | Random regression of order $$p$$, covariance $$K_p \otimes I$$ |
 | Residual | — | — | One homogeneous residual variance |
 
 Order `0` means a constant (intercept-only) term; order `1` adds a linear term, order `2` a quadratic term, and so on. The same `--forder` is used for the fixed curves and for the SNP effect. The highest order must be smaller than the number of distinct time points.
@@ -148,7 +150,7 @@ With `--snp-set` the output prefix becomes `<out>.<start>_<end>` (0-based start,
 
 ### `<out>.var`
 
-The lower triangle of `K_a` (`G`), then the lower triangle of `K_p` (`permanent`), then the residual variance. `row` and `col` are 1-based indices of the Legendre coefficients (`1` = `φ_0`, `2` = `φ_1`, ...). Rows with `row = col` are variances; the others are covariances. With the default orders (`--aorder 2 --porder 2`), from the [standard scan](#standard-scan) example:
+The lower triangle of $$K_a$$ (`G`), then the lower triangle of $$K_p$$ (`permanent`), then the residual variance. `row` and `col` are 1-based indices of the Legendre coefficients (`1` = $$\phi_0$$, `2` = $$\phi_1$$, ...). Rows with `row = col` are variances; the others are covariances. With the default orders (`--aorder 2 --porder 2`), from the [standard scan](#standard-scan) example:
 
 ```
 component	row	col	variance	se
@@ -169,7 +171,7 @@ residual	1	1	1.46686	0.0190305
 
 Standard errors come from the AI matrix. Values that are not finite print as `NA`.
 
-**Starting values.** By default, the diagonals of `K_a` and `K_p` and the residual variance start at the phenotypic variance divided by `aorder + porder + 3`, and the covariances at `0`. With `--continue`, the `variance` column of an existing `<out>.var` is used instead, provided the file has the expected rows for the chosen `--aorder`/`--porder` and gives positive definite matrices; otherwise the defaults are used with a warning. Without `--continue`, an existing `<out>.var` is not read and is overwritten.
+**Starting values.** By default, the diagonals of $$K_a$$ and $$K_p$$ and the residual variance start at the phenotypic variance divided by `aorder + porder + 3`, and the covariances at `0`. With `--continue`, the `variance` column of an existing `<out>.var` is used instead, provided the file has the expected rows for the chosen `--aorder`/`--porder` and gives positive definite matrices; otherwise the defaults are used with a warning. Without `--continue`, an existing `<out>.var` is not read and is overwritten.
 
 ### `<out>.h2`
 
@@ -222,7 +224,7 @@ With `--solver eigen --refit`, the columns `cc_par cc_gra` follow `N`. The numbe
 | `af` | Frequency of `a1` in the analysed individuals |
 | `N` | Number of analysed individuals with a non-missing genotype |
 | `cc_par`, `cc_gra` | Convergence diagnostics of the per-SNP refit (norm of the last parameter change and of the gradient); `nan` for SNPs not tested exactly |
-| `beta_tk`, `se_tk` | Estimated SNP effect on Legendre coefficient `k` and its standard error |
+| `beta_tk`, `se_tk` | Estimated SNP effect on Legendre coefficient $$k$$ and its standard error |
 | `cov_tk_tl` | Sampling covariance of `beta_tk` and `beta_tl` |
 | `p` | Wald chi-square p-value with `forder + 1` degrees of freedom |
 

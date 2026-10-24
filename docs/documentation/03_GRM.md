@@ -21,12 +21,12 @@ As elsewhere in `fastGMA`, a GRM is referred to by its prefix: `--grm output/tes
 
 ### GRM types
 
-Choose the matrix with `--grm-type`. Let `x` be the genotype dosage (0/1/2 copies of the A1 allele), `p` the A1 frequency and `q = 1 − p`.
+Choose the matrix with `--grm-type`. Let $$x$$ be the genotype dosage (0/1/2 copies of the A1 allele), $$p$$ the A1 frequency and $$q = 1 - p$$.
 
 | `--grm-type` | Matrix | Genotype coding for each SNP | GCTA equivalent |
 | --- | --- | --- | --- |
-| `agrm` (default) | Additive | `x − 2p` | `--make-grm` |
-| `dgrm_gs` | Dominance, breeding-value ("statistical") coding | `0 → −2p²`, `1 → 2pq`, `2 → −2q²` | `--make-grm-d` |
+| `agrm` (default) | Additive | $$x - 2p$$ | `--make-grm` |
+| `dgrm_gs` | Dominance, breeding-value ("statistical") coding | $$0 \to -2p^2$$, $$1 \to 2pq$$, $$2 \to -2q^2$$ | `--make-grm-d` |
 
 Under Hardy–Weinberg equilibrium the dominance code is uncorrelated with the additive code, so fitting `agrm` and `dgrm_gs` together splits the genetic variance into the classical additive and dominance variances.
 
@@ -34,16 +34,16 @@ The scaling is set with `--code-type`:
 
 | `--code-type` | Additive GRM | GCTA equivalent |
 | --- | --- | --- |
-| `2` (default) | each SNP standardized by its own SD, then averaged: `A_jk = (1/N_jk) Σ_i z_ij z_ik`, with `z = (x − 2p)/√(2pq)` | `--make-grm` |
-| `1` | VanRaden-type: `A_jk = Σ_i (x_ij − 2p_i)(x_ik − 2p_i) / Σ_i 2p_i q_i` | `--make-grm-alg 1` |
+| `2` (default) | each SNP standardized by its own SD, then averaged: $$A_{jk} = \frac{1}{N_{jk}} \sum_i z_{ij} z_{ik}$$, with $$z = (x - 2p)/\sqrt{2pq}$$ | `--make-grm` |
+| `1` | VanRaden-type: $$A_{jk} = \sum_i (x_{ij} - 2p_i)(x_{ik} - 2p_i) \big/ \sum_i 2p_i q_i$$ | `--make-grm-alg 1` |
 
-Both additive scalings are special cases of `--alpha`, which assumes that the variance of a SNP effect is proportional to `(2pq)^α`. With `v_i = 2p_i q_i`, the additive GRM is
+Both additive scalings are special cases of `--alpha`, which assumes that the variance of a SNP effect is proportional to $$(2pq)^\alpha$$. With $$v_i = 2p_i q_i$$, the additive GRM is
 
-`A_jk = Σ_i v_i^α (x_ij − 2p_i)(x_ik − 2p_i) / Σ_i v_i^(1+α)`,
+$$A_{jk} = \frac{\sum_i v_i^{\alpha} (x_{ij} - 2p_i)(x_{ik} - 2p_i)}{\sum_i v_i^{1+\alpha}},$$
 
-so that the expected diagonal is 1 (with `--ffile`, `v_i` is the observed variance of feature `i`). `--alpha -1` gives `--code-type 2` and `--alpha 0` gives `--code-type 1`, with identical output files. Under `α = −1` every SNP explains the same share of the genetic variance; values above −1 shift the variance toward common SNPs and values below −1 toward rare SNPs. Speed et al. (2017, *Nature Genetics* 49:986–992) recommended `α = −0.25` for human complex traits. To choose α for your data, build GRMs over a grid of values (for example −1, −0.75, −0.5, −0.25, 0) and compare the REML log-likelihoods. `--alpha` cannot be combined with `--code-type` and applies only to `agrm`. With missing genotypes, each element is rescaled by `M / N_jk` as for the other scalings (see "Quality control and missing genotypes" below).
+so that the expected diagonal is 1 (with `--ffile`, $$v_i$$ is the observed variance of feature $$i$$). `--alpha -1` gives `--code-type 2` and `--alpha 0` gives `--code-type 1`, with identical output files. Under $$\alpha = -1$$ every SNP explains the same share of the genetic variance; values above $$-1$$ shift the variance toward common SNPs and values below $$-1$$ toward rare SNPs. Speed et al. (2017, *Nature Genetics* 49:986–992) recommended $$\alpha = -0.25$$ for human complex traits. To choose $$\alpha$$ for your data, build GRMs over a grid of values (for example −1, −0.75, −0.5, −0.25, 0) and compare the REML log-likelihoods. `--alpha` cannot be combined with `--code-type` and applies only to `agrm`. With missing genotypes, each element is rescaled by $$M/N_{jk}$$ as for the other scalings (see "Quality control and missing genotypes" below).
 
-For the dominance GRM the two `--code-type` choices apply, using the variance of the dominance coding instead of `2pq`. An epistatic GRM (for example additive-by-additive) is built from existing GRMs with `--process-grm --make-epis` (see Section 3).
+For the dominance GRM the two `--code-type` choices apply, using the variance of the dominance coding instead of $$2pq$$. An epistatic GRM (for example additive-by-additive) is built from existing GRMs with `--process-grm --make-epis` (see Section 3).
 
 ### Inputs
 
@@ -94,7 +94,7 @@ CHR	SNP	A1	A2	FREQ	NOBS
 
 A SNP (or feature) is excluded when any of the following holds:
 
-- its minor allele frequency `min(p, 1 − p)` is below `--maf` (BED input only)
+- its minor allele frequency $$\min(p, 1 - p)$$ is below `--maf` (BED input only)
 - its missing rate is above `--missing-rate`
 - it has zero variance
 
@@ -110,7 +110,7 @@ Missing genotypes are handled as in GCTA. A missing call contributes nothing to 
 | `--out` | — | Output prefix (required) |
 | `--grm-type` | `agrm` | `agrm` or `dgrm_gs` |
 | `--code-type` | `2` | `2`: per-SNP standardization; `1`: VanRaden-type scaling |
-| `--alpha` | `-1` | Additive GRM with SNP-effect variance proportional to `(2pq)^α`; excludes `--code-type` |
+| `--alpha` | `-1` | Additive GRM with SNP-effect variance proportional to $$(2pq)^\alpha$$; excludes `--code-type` |
 | `--maf` | `0.01` | Minimum minor allele frequency (BED input) |
 | `--missing-rate` | `0.05` | Maximum missing rate per SNP/feature |
 | `--keep` / `--remove` | — | Individuals to use / leave out (see above) |
@@ -124,7 +124,7 @@ Missing genotypes are handled as in GCTA. A missing call contributes nothing to 
 | `--missing-geno` | `NA NaN N/A ...` | Tokens treated as missing in `--ffile` input |
 | `--threads` | `10` | Number of threads |
 
-The full genotype matrix is never held in memory: the SNPs are read in `--npart-snp` chunks. Memory is dominated by the GRM block (about `8 x n x n` bytes for all rows) plus one chunk (about `8 x n x m / npart-snp` bytes for `m` SNPs), so raise `--npart-snp` when `m` is large. For very large samples, split the lower triangle into row blocks with `--npart` and merge them afterwards:
+The full genotype matrix is never held in memory: the SNPs are read in `--npart-snp` chunks. Memory is dominated by the GRM block (about $$8n^2$$ bytes for $$n$$ individuals) plus one chunk (about $$8nm/S$$ bytes for $$m$$ SNPs and $$S$$ = `--npart-snp` chunks), so raise `--npart-snp` when $$m$$ is large. For very large samples, split the lower triangle into row blocks with `--npart` and merge them afterwards:
 
 ```bash
 for i in 1 2 3 4; do
@@ -139,7 +139,7 @@ Each job writes `output/test.4_<i>.grm.*` and its own log `output/test.4_<i>.log
 
 | File | Content |
 | --- | --- |
-| `<out>.grm.bin` | Lower triangle including the diagonal, row by row (`A_11, A_21, A_22, A_31, ...`), little-endian float32 |
+| `<out>.grm.bin` | Lower triangle including the diagonal, row by row ($$A_{11}, A_{21}, A_{22}, A_{31}, \ldots$$), little-endian float32 |
 | `<out>.grm.id` | One line per sample: `FID<TAB>IID`, in matrix row order |
 | `<out>.grm.N.bin` | Per-pair SNP counts `N_jk` in the same layout as `.grm.bin` (float32). GCTA needs this file for `--mgrm` merging, `--grm-cutoff`, `--make-bK-sparse` and `--adj-grm` |
 | `<out>.grm.N` | Text file: number of SNPs used and the scale factor |
@@ -197,7 +197,7 @@ Output formats for `--out-fmt`:
 
 | `--out-fmt` | File | Layout |
 | --- | --- | --- |
-| `0` | `<out>.grm.matrix` | Full `n × n` text matrix |
+| `0` | `<out>.grm.matrix` | Full $$n \times n$$ text matrix |
 | `1` | `<out>.grm.index_triplet` | `row col value` per line, lower triangle, 1-based indices |
 | `2` | `<out>.grm.iid_triplet` | `IID_row IID_col value` per line, lower triangle |
 | `3` | `<out>.grm.bin` (dense) or `<out>.grm.sp.bin` (sparse) | Dense: GCTA float32 lower triangle. Sparse: records of `int64 row, int64 col, float64 value`, 0-based |
@@ -208,7 +208,7 @@ Notes:
 - **`--pca`.** The files follow the GCTA layout. `<out>.eigenval` has one eigenvalue per line, largest first. `<out>.eigenvec` has one line per sample in `.grm.id` order with the columns `FID IID PC1 PC2 ...` (tab-separated, no header line). With a one-column `.grm.id`, the IID is written in both ID columns. `--num-pc 20` (default) computes only the 20 leading eigenpairs, which is faster than a full decomposition; `--num-pc 0` writes all of them.
 - **`--make-epis`.** The two GRMs must have the same `.grm.id` order. The output is float32 `<out>.grm.bin` plus `<out>.grm.id`; `.grm.N` is the concatenation of the two input `.grm.N` files when both exist. No `.grm.N.bin` is written.
 - **`--group`.** The output goes next to the input GRM, not to `--out`. Besides the group tables, it writes a sparse GRM (`.grm.sp.bin`) that keeps only within-group pairs.
-- **`--make-inv`.** The inverse is computed with a LAPACK Cholesky factorization (`dpotrf`, `dpotri`). A GRM centered by sample allele frequencies has rank at most `n − 1`, so it cannot be inverted without a diagonal value. That is why `--val` defaults to `0.001` here, while `--make-grm` itself adds nothing. With missing genotypes the GRM can have slightly negative eigenvalues (Section 1). If the matrix is not positive definite, `--make-inv` stops, reports the smallest eigenvalue and asks to rerun with `--val` above a given value. With `--out-fmt 3` the inverse is stored as float32, like every `.grm.bin`.
+- **`--make-inv`.** The inverse is computed with a LAPACK Cholesky factorization (`dpotrf`, `dpotri`). A GRM centered by sample allele frequencies has rank at most $$n - 1$$, so it cannot be inverted without a diagonal value. That is why `--val` defaults to `0.001` here, while `--make-grm` itself adds nothing. With missing genotypes the GRM can have slightly negative eigenvalues (Section 1). If the matrix is not positive definite, `--make-inv` stops, reports the smallest eigenvalue and asks to rerun with `--val` above a given value. With `--out-fmt 3` the inverse is stored as float32, like every `.grm.bin`.
 
 ## 4. Compatibility with GCTA
 
@@ -241,7 +241,7 @@ Differences to keep in mind when comparing the two tools:
 
 To reproduce a GCTA GRM exactly, use `--maf 0` (or the same `--maf` in both tools), `--missing-rate 1`, and only autosomal SNPs (`--chr 1-22` for human data).
 
-**LDAK.** With the same SNPs and complete genotypes, `--alpha α` gives the kinship matrix of LDAK `--calc-kins-direct --ignore-weights YES --power α` up to a constant factor: LDAK divides by the observed mean diagonal, so its matrix has mean diagonal exactly 1, whereas fastGMA (like GCTA) divides by the expected value `Σ_i v_i^(1+α)`. After dividing the fastGMA matrix by its mean diagonal, the two agree to float32 precision. With missing genotypes they also differ in the treatment of missing calls (LDAK uses one denominator for all pairs instead of `N_jk`).
+**LDAK.** With the same SNPs and complete genotypes, `--alpha` $$\alpha$$ gives the kinship matrix of LDAK `--calc-kins-direct --ignore-weights YES --power` $$\alpha$$ up to a constant factor: LDAK divides by the observed mean diagonal, so its matrix has mean diagonal exactly 1, whereas fastGMA (like GCTA) divides by the expected value $$\sum_i v_i^{1+\alpha}$$. After dividing the fastGMA matrix by its mean diagonal, the two agree to float32 precision. With missing genotypes they also differ in the treatment of missing calls (LDAK uses one denominator for all pairs instead of `N_jk`).
 
 ## 5. Examples
 
@@ -275,17 +275,17 @@ done
 grep "logL (REML" output/alpha_*.log
 ```
 
-All models have the same fixed effects and the same number of variance components, so the log-likelihoods can be compared directly; the highest one gives the best-supported α. For the example data:
+All models have the same fixed effects and the same number of variance components, so the log-likelihoods can be compared directly; the highest one gives the best-supported $$\alpha$$. For the example data:
 
-| α | `G` | `residual` | Heritability | REML logL |
+| $$\alpha$$ | `G` | `residual` | Heritability | REML logL |
 | --- | --- | --- | --- | --- |
-| −1 | 0.2204 | 0.6551 | 0.2533 | −187.9204 |
-| −0.75 | 0.2221 | 0.6534 | 0.2553 | −187.9097 |
-| −0.5 | 0.2237 | 0.6518 | 0.2571 | −187.8994 |
-| −0.25 | 0.2251 | 0.6504 | 0.2587 | −187.8895 |
+| $$-1$$ | 0.2204 | 0.6551 | 0.2533 | −187.9204 |
+| $$-0.75$$ | 0.2221 | 0.6534 | 0.2553 | −187.9097 |
+| $$-0.5$$ | 0.2237 | 0.6518 | 0.2571 | −187.8994 |
+| $$-0.25$$ | 0.2251 | 0.6504 | 0.2587 | −187.8895 |
 | 0 | 0.2263 | 0.6491 | 0.2601 | −187.8802 |
 
-With 427 individuals the log-likelihood changes by only 0.04 over the grid, so these data cannot distinguish the values of α; estimating α needs large samples.
+With 427 individuals the log-likelihood changes by only 0.04 over the grid, so these data cannot distinguish the values of $$\alpha$$; estimating $$\alpha$$ needs large samples.
 
 ### Additive, dominance and epistatic GRMs for a multi-GRM model
 

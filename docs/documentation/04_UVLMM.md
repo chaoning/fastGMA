@@ -20,13 +20,13 @@ Run `fastgma -h 3` for the full option list.
 
 For each SNP, `UVLMM` tests the additive effect under a mixed model
 
-```
-y = X b + s g + u + e
-```
+$$
+y = Xb + s\,g + u + e
+$$
 
-where `X b` are the fixed effects (intercept, covariates, class variables), `s g` is the SNP being tested, `u` is the polygenic random effect captured by one or more GRMs, and `e` is the residual. The null model (no SNP) is fitted once to estimate the variance components. The genome-wide scan then uses a fast approximate test for every SNP and an exact test only for promising SNPs.
+where $$Xb$$ are the fixed effects (intercept, covariates, class variables), $$s\,g$$ is the SNP being tested ($$g$$ its genotypes, $$s$$ its effect), $$u$$ is the polygenic random effect captured by one or more GRMs, and $$e$$ is the residual. The null model (no SNP) is fitted once to estimate the variance components. The genome-wide scan then uses a fast approximate test for every SNP and an exact test only for promising SNPs.
 
-**Approximate test.** The exact test needs `g' P g` for every SNP. `UVLMM` approximates it by `g' P g ≈ gamma · g' g`. `gamma` is the mean of `g' P g / g' g` over `--num-random-snp` random SNPs that pass the MAF and missing-rate filters. The random SNPs are drawn from the whole genotype file with `--seed` (default `42`), so `gamma` is the same in reruns and in every `--parallel` / `--snp-set` job. SNPs with approximate p below `--p-approx-cut` are re-tested exactly. `--p-approx-cut 1` gives the exact test for every SNP; `--p-approx-cut 0` keeps the approximate test only.
+**Approximate test.** The exact test needs $$g'Pg$$ for every SNP. `UVLMM` approximates it by $$g'Pg \approx \gamma\, g'g$$. $$\gamma$$ is the mean of $$g'Pg / g'g$$ over `--num-random-snp` random SNPs that pass the MAF and missing-rate filters. The random SNPs are drawn from the whole genotype file with `--seed` (default `42`), so $$\gamma$$ is the same in reruns and in every `--parallel` / `--snp-set` job. SNPs with approximate p below `--p-approx-cut` are re-tested exactly. `--p-approx-cut 1` gives the exact test for every SNP; `--p-approx-cut 0` keeps the approximate test only.
 
 ## 2. Model and solver
 
@@ -43,8 +43,8 @@ The two solvers:
 
 | `--solver` | Method | Notes |
 | --- | --- | --- |
-| `eigen` | The GRM is eigendecomposed once and the data are rotated. REML and the per-SNP tests then cost `O(n)` per evaluation. | `--model lmm` only. Needs one record per individual. `--random` is not allowed. Supports `--refit` / `--no-refit`. |
-| `general` | Dense AI-REML on the `n × n` covariance matrix (WEMAI: the AI matrix is blended with the EM matrix when needed to keep variances positive). | Allows repeated records and `--random`. Exact re-tests use the null variances. |
+| `eigen` | The GRM is eigendecomposed once and the data are rotated. REML and the per-SNP tests then cost $$O(n)$$ per evaluation. | `--model lmm` only. Needs one record per individual. `--random` is not allowed. Supports `--refit` / `--no-refit`. |
+| `general` | Dense AI-REML on the $$n \times n$$ covariance matrix (WEMAI: the AI matrix is blended with the EM matrix when needed to keep variances positive). | Allows repeated records and `--random`. Exact re-tests use the null variances. |
 
 Rules checked at start-up:
 
@@ -98,7 +98,7 @@ All files share the `--out` prefix and are tab-separated with a header row:
 | File | Contents |
 | --- | --- |
 | `<out>.var` | Estimated variance components with standard errors (inverse AI matrix at the estimates) |
-| `<out>.h2` | Per-component proportion `h2_i = sigma2_i d_i / sum_k sigma2_k d_k` (`d_i` = mean GRM diagonal, 1 for non-GRM effects), SE by the delta method (not written for `--model lm`) |
+| `<out>.h2` | Per-component proportion $$h^2_i = \sigma^2_i d_i / \sum_k \sigma^2_k d_k$$ ($$d_i$$ = mean GRM diagonal, 1 for non-GRM effects), SE by the delta method (not written for `--model lm`) |
 | `<out>.sln` | Fixed-effect estimates; with `--predict`, also the predicted random effects (BLUP) |
 | `<out>.assoc` | One row per SNP with the association results |
 | `<out>.log` | Log of the run (appended; `<out>.<m>_<i>.log` with `--parallel`, `<out>.<start>_<end>.log` with `--snp-set`) |
@@ -126,21 +126,21 @@ residual	0.650721	0.0403661
 total	0.349279	0.0403661
 ```
 
-Each GRM variance is put on the phenotypic scale by the mean diagonal `d_k` of its
-kernel `Z G_k Z'` over the analysed records (for one record per individual, the mean
+Each GRM variance is put on the phenotypic scale by the mean diagonal $$d_k$$ of its
+kernel $$Z G_k Z'$$ over the analysed records (for one record per individual, the mean
 diagonal of the GRM over the analysed individuals); a `permanent` / `--random` effect
-and the residual have `d = 1`:
+and the residual have $$d = 1$$:
 
-```
-h2_k = sigma2_k d_k / V_p,     V_p = sum_k sigma2_k d_k   (mean of diag(V))
-```
+$$
+h^2_k = \frac{\sigma^2_k d_k}{V_p}, \qquad V_p = \sum_k \sigma^2_k d_k \quad \bigl(\text{the mean of } \operatorname{diag}(V)\bigr)
+$$
 
 This is the definition used by `--fast-reml` (`variance_prop`) and the PVE of GEMMA,
 and the same for every model and solver, so `--grm A` and `--mgrm A` give the same
-`.h2`. It matters for GRMs whose mean diagonal is far from 1 (for example an `A∘A`
-epistatic GRM). For a standard additive GRM `d` is `1 + F` averaged over the sample
+`.h2`. It matters for GRMs whose mean diagonal is far from 1 (for example an $$A \circ A$$
+epistatic GRM). For a standard additive GRM $$d$$ is $$1 + F$$ averaged over the sample
 (close to 1); GCTA `--reml` reports the unscaled `V(G)/Vp`, which can be computed from
-`<out>.var` as `sigma2_G / (sigma2_G + sigma2_e)`. The `d_k` are written to the log
+`<out>.var` as $$\sigma^2_G / (\sigma^2_G + \sigma^2_e)$$. The $$d_k$$ are written to the log
 ("mean diagonal over the records"). SEs use the delta method on the inverse AI matrix.
 
 Values that are not finite (for example an SE that could not be derived from the
@@ -189,7 +189,7 @@ Columns: chromosome `chr`, SNP ID `snp`, position `pos`, effect allele `a1` and 
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--maf` | `0.01` | Minimum minor allele frequency `min(p, 1 − p)` (PLINK input only) |
+| `--maf` | `0.01` | Minimum minor allele frequency $$\min(p, 1 - p)$$ (PLINK input only) |
 | `--missing-rate` | `0.05` | Keep a SNP if its missing rate is at or below this |
 | `--p-approx-cut` | `1e-3` | SNPs with approximate p below this are re-tested exactly. `0` = approximate test only; `1` = exact test for every SNP |
 | `--refit` / `--no-refit` | `--refit` | `--solver eigen`: re-estimate the variance components for every exactly re-tested SNP |
