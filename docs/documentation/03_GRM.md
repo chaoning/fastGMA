@@ -62,6 +62,34 @@ With `--ffile`:
 - Missing values are written as any of the `--missing-geno` tokens (default `NA`, `NaN`, `N/A` and similar).
 - `--maf` does not apply, and only `--grm-type agrm` is supported.
 
+### Selecting individuals and SNPs
+
+| Option | File or value | Effect |
+| --- | --- | --- |
+| `--keep <file>` | one individual per line: `IID`, or `FID IID` | use only these individuals |
+| `--remove <file>` | same format | leave these individuals out |
+| `--extract <file>` | SNP IDs in the first column | use only these SNPs |
+| `--exclude <file>` | SNP IDs in the first column | leave these SNPs out |
+| `--chr <list>` | chromosomes, e.g. `1-22`, `1,3,5` or `2 7 19` | use only these chromosomes |
+| `--not-chr <list>` | same format | leave these chromosomes out |
+
+A line with one column is matched to the IID; a line with two or more columns is matched to FID and IID, as in PLINK. A leading `chr` in chromosome names is ignored. The options can be combined: individuals are kept and then removed, and SNPs are extracted, excluded and then restricted by chromosome. The output keeps the `.fam` order of the individuals. Allele frequencies and missing rates are computed in the selected individuals, so the result is identical to running on a file subset with `plink --keep-allele-order --make-bed`. The SNP options require `--bfile`.
+
+A leave-one-chromosome-out (LOCO) GRM for chromosome `c` is built with `--not-chr c`, and the GRM of one chromosome with `--chr c`.
+
+### Allele frequencies
+
+By default `p` is estimated from the selected individuals. `--read-freq <file>` uses given A1 frequencies instead, for example from a reference population, so that GRMs built on different subsets of individuals are on the same scale. The file needs a header line with the columns `SNP`, `A1` and `FREQ` (other columns are ignored), which is the format written by `--write-freq`:
+
+```text
+CHR	SNP	A1	A2	FREQ	NOBS
+0	rs1155740	T	C	0.27383863	409
+```
+
+`FREQ` is the frequency of the allele in the `A1` column. If that allele is the `.bim` A2, the frequency is converted to `1 − FREQ`. SNPs that are absent from the file, or whose `A1` matches neither `.bim` allele, are excluded and counted in the log. The frequencies are used for centering, scaling and the `--maf` filter; the missing-rate filter still uses the analysed individuals. With the same frequencies, the GRM is identical to GCTA `--update-freq`.
+
+`--write-freq` writes `<out>.freq` with one line per selected SNP: the A1 frequency used (estimated or read) and `NOBS`, the number of individuals with an observed genotype. With `--npart`, only part 1 writes the file. Both options require `--bfile`.
+
 ### Quality control and missing genotypes
 
 A SNP (or feature) is excluded when any of the following holds:
@@ -85,6 +113,11 @@ Missing genotypes are handled as in GCTA. A missing call contributes nothing to 
 | `--alpha` | `-1` | Additive GRM with SNP-effect variance proportional to `(2pq)^α`; excludes `--code-type` |
 | `--maf` | `0.01` | Minimum minor allele frequency (BED input) |
 | `--missing-rate` | `0.05` | Maximum missing rate per SNP/feature |
+| `--keep` / `--remove` | — | Individuals to use / leave out (see above) |
+| `--extract` / `--exclude` | — | SNPs to use / leave out (BED input) |
+| `--chr` / `--not-chr` | — | Chromosomes to use / leave out (BED input) |
+| `--read-freq` | — | A1 frequencies to use instead of estimating them (BED input) |
+| `--write-freq` | off | Write `<out>.freq` (BED input) |
 | `--val` | `0` | Value added to the diagonal of the output |
 | `--npart <n> <i>` | `1 1` | Compute only part `i` of `n` of the lower triangle (see below) |
 | `--npart-snp` | `20` | Number of SNP chunks read from disk in turn; raise it to lower memory use |
@@ -110,6 +143,7 @@ Each job writes `output/test.4_<i>.grm.*` and its own log `output/test.4_<i>.log
 | `<out>.grm.id` | One line per sample: `FID<TAB>IID`, in matrix row order |
 | `<out>.grm.N.bin` | Per-pair SNP counts `N_jk` in the same layout as `.grm.bin` (float32). GCTA needs this file for `--mgrm` merging, `--grm-cutoff`, `--make-bK-sparse` and `--adj-grm` |
 | `<out>.grm.N` | Text file: number of SNPs used and the scale factor |
+| `<out>.freq` | With `--write-freq`: `CHR SNP A1 A2 FREQ NOBS` for every selected SNP |
 
 These are exactly the files GCTA writes (plus the text `.grm.N`).
 
@@ -183,6 +217,8 @@ Notes:
 | `--make-grm` | `--make-grm` |
 | `--make-grm --code-type 1` | `--make-grm-alg 1` |
 | `--make-grm --grm-type dgrm_gs` | `--make-grm-d` |
+| `--keep`, `--remove`, `--extract`, `--exclude`, `--chr` | same options |
+| `--read-freq` | `--update-freq` |
 | `--process-grm --merge` | concatenating `--make-grm-part` outputs |
 | `--process-grm --pca` | `--pca` (same `.eigenval` / `.eigenvec` layout) |
 
@@ -203,7 +239,9 @@ Differences to keep in mind when comparing the two tools:
 | X chromosome GRM | not supported | `--make-grm-xchr` |
 | Feature-matrix input (`--ffile`) | supported | not available |
 
-To reproduce a GCTA GRM exactly, use `--maf 0` (or the same `--maf` in both tools), `--missing-rate 1`, and only autosomal SNPs.
+To reproduce a GCTA GRM exactly, use `--maf 0` (or the same `--maf` in both tools), `--missing-rate 1`, and only autosomal SNPs (`--chr 1-22` for human data).
+
+**LDAK.** With the same SNPs and complete genotypes, `--alpha α` gives the kinship matrix of LDAK `--calc-kins-direct --ignore-weights YES --power α` up to a constant factor: LDAK divides by the observed mean diagonal, so its matrix has mean diagonal exactly 1, whereas fastGMA (like GCTA) divides by the expected value `Σ_i v_i^(1+α)`. After dividing the fastGMA matrix by its mean diagonal, the two agree to float32 precision. With missing genotypes they also differ in the treatment of missing calls (LDAK uses one denominator for all pairs instead of `N_jk`).
 
 ## 5. Examples
 
@@ -214,6 +252,40 @@ fastgma --make-grm --bfile test --out output/test
 fastgma --uvlmm --grm output/test --bfile test \
   --data test_simu_pheno.txt --trait pheno --out output/test_uvlmm
 ```
+
+### Leave-one-chromosome-out GRMs
+
+```bash
+for c in $(seq 1 22); do
+  fastgma --make-grm --bfile test --not-chr $c --out output/test_loco$c
+done
+```
+
+`output/test_loco<c>` is used when testing the SNPs of chromosome `c`.
+
+### Choosing α
+
+Build a GRM for each value on a grid and compare the REML log-likelihoods of the null model. Without `--bfile`, `--uvlmm` fits only the null model:
+
+```bash
+for a in -1 -0.75 -0.5 -0.25 0; do
+  fastgma --make-grm --bfile test --alpha $a --out output/alpha_$a
+  fastgma --uvlmm --grm output/alpha_$a --data test_simu_pheno.txt --trait pheno --out output/alpha_$a
+done
+grep "logL (REML" output/alpha_*.log
+```
+
+All models have the same fixed effects and the same number of variance components, so the log-likelihoods can be compared directly; the highest one gives the best-supported α. For the example data:
+
+| α | `G` | `residual` | Heritability | REML logL |
+| --- | --- | --- | --- | --- |
+| −1 | 0.2204 | 0.6551 | 0.2533 | −187.9204 |
+| −0.75 | 0.2221 | 0.6534 | 0.2553 | −187.9097 |
+| −0.5 | 0.2237 | 0.6518 | 0.2571 | −187.8994 |
+| −0.25 | 0.2251 | 0.6504 | 0.2587 | −187.8895 |
+| 0 | 0.2263 | 0.6491 | 0.2601 | −187.8802 |
+
+With 427 individuals the log-likelihood changes by only 0.04 over the grid, so these data cannot distinguish the values of α; estimating α needs large samples.
 
 ### Additive, dominance and epistatic GRMs for a multi-GRM model
 
