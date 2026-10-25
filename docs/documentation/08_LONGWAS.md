@@ -184,8 +184,10 @@ One row per distinct observed time point, in increasing order. `h2` is defined i
 ### `<out>.sln`
 
 ```
-type	term	levels	effect	se
+type	term	levels	effect	se	rel
 ```
+
+`rel` is written with `--predict` only.
 
 | `type` | `term` | `levels` |
 | --- | --- | --- |
@@ -195,16 +197,16 @@ type	term	levels	effect	se
 | `3` | Additive genetic coefficient `G_t0`, `G_t1`, ... (with `--predict`) | Individual ID |
 | `4` | Permanent environmental coefficient `permanent_t0`, `permanent_t1`, ... (with `--predict`) | Individual ID |
 
-A fixed-effect column removed as dependent is listed with `0 0` in the `effect` and `se` columns. With `--predict`, the `G_tk` rows cover every individual in the GRM, including those without records. Example (default orders, `--class Sex`, from the [prediction](#predict-the-random-regression-coefficients) example):
+A fixed-effect column removed as dependent is listed with effect `0` and se `NA`. With `--predict`, the `G_tk` rows cover every individual in the GRM, including those without records, and `rel` is the reliability of each coefficient, $$1 - \mathrm{PEV} / (K_a[k,k]\, G_{jj})$$ for `G_tk` and $$1 - \mathrm{PEV} / K_p[k,k]$$ for `permanent_tk`; it is `NA` on the fixed-effect rows. Numbers keep 10 significant digits. Example (default orders, `--class Sex`, from the [prediction](#predict-the-random-regression-coefficients) example):
 
 ```
-type	term	levels	effect	se
-0	mu_t0	1	24.221	0.0925801
-0	mu_t1	1	5.59215	0.0383282
-0	mu_t2	1	-2.07213	0.0168577
-2	Sex	1	-0.374745	0.0623099
-2	Sex	2	0	0
-3	G_t0	1419	0.625807	0.552273
+type	term	levels	effect	se	rel
+0	mu_t0	1	24.22101506	0.09258007857	NA
+0	mu_t1	1	5.592146947	0.03832815573	NA
+0	mu_t2	1	-2.072129875	0.01685774373	NA
+2	Sex	1	-0.3747445202	0.06230991615	NA
+2	Sex	2	0	NA	NA
+3	G_t0	1419	0.6258066228	0.5522730352	0.6848795603
 ...
 ```
 

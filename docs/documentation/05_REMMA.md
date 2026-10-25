@@ -187,7 +187,7 @@ total	0.271645	0.0492958
 
 (Mean diagonals in this example: `add` 1.0139, `dom` 1.00126, `axa` 1.03794.)
 
-`<out>.sln` has the columns `type term levels effect se`. `type` is `0` for the intercept (`mu`), `1` for a covariate and `2` for a class level. A class level removed because it is linearly dependent (the reference level) is shown with `0 0`.
+`<out>.sln` has the columns `type term levels effect se`. `type` is `0` for the intercept (`mu`), `1` for a covariate and `2` for a class level. A class level removed because it is linearly dependent (the reference level) is shown with effect `0` and se `NA`. Numbers keep 10 significant digits.
 
 ```
 type	term	levels	effect	se

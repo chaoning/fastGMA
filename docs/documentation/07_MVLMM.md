@@ -176,18 +176,19 @@ trait	type	term	levels	effect	se
 y1	0	mu	1	1.44219	0.093429
 y1	1	cov1	1	0.414169	0.0498185
 y1	2	sex	1	-0.347646	0.110603
-y1	2	sex	2	0	0
+y1	2	sex	2	0	NA
 ```
 
 | Column | Meaning |
 | --- | --- |
 | `trait` | Trait name |
 | `type` | `0` intercept, `1` covariate (also `--condition-snp` SNPs), `2` class level, `3` GRM random effect, `4` non-genetic random effect |
-| `term` | Fixed effects: column name (or SNP ID). Random effects: 1-based index of the random effect, GRMs first in the order `--mgrm`, `--grm`, then the non-genetic effects |
+| `term` | Fixed effects: column name (or SNP ID). Random effects: the variance component as named in `<out>.var` |
 | `levels` | Class level, or individual ID / level for random effects (`1` for intercept and covariates) |
-| `effect`, `se` | Estimate and standard error (for random effects, the square root of the prediction error variance) |
+| `effect`, `se` | Estimate and standard error (for random effects, the square root of the prediction error variance, PEV) |
+| `rel` | With `--predict`: reliability $$1 - \mathrm{PEV} / \mathrm{prior\ variance}$$ of a random-effect level; `NA` on fixed-effect rows |
 
-A fixed-effect column dropped as linearly dependent has `effect` and `se` equal to `0` (here `sex` level `2`). With `--predict`, one row per trait and level is added for each random effect (`type` 3 or 4). For GRM random effects, `--predict` also keeps the GRM individuals without records, so their genetic values are predicted too.
+A fixed-effect column dropped as linearly dependent has `effect` `0` and `se` `NA` (here `sex` level `2`). Numbers keep 10 significant digits (the rows above are from an earlier version that printed 6). With `--predict`, one row per trait and level is added for each random effect (`type` 3 or 4). For GRM random effects, `--predict` also keeps the GRM individuals without records, so their genetic values are predicted too.
 
 ### `<out>.assoc`
 

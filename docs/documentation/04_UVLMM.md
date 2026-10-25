@@ -105,7 +105,8 @@ All files share the `--out` prefix and are tab-separated with a header row:
 | --- | --- |
 | `<out>.var` | Estimated variance components with standard errors (inverse AI matrix at the estimates) |
 | `<out>.h2` | Per-component proportion $$h^2_i = \sigma^2_i d_i / \sum_k \sigma^2_k d_k$$ ($$d_i$$ = mean GRM diagonal, 1 for non-GRM effects), SE by the delta method (not written for `--model lm`) |
-| `<out>.sln` | Fixed-effect estimates; with `--predict`, also the predicted random effects (BLUP) |
+| `<out>.sln` | Fixed-effect estimates; with `--predict`, also the predicted random effects (BLUP) and their reliabilities |
+| `<out>.res` | With `--predict`: each record split into its fixed, random and residual parts |
 | `<out>.assoc` | One row per SNP with the association results |
 | `<out>.log` | Log of the run (appended; `<out>.<m>_<i>.log` with `--parallel`, `<out>.<start>_<end>.log` with `--snp-set`) |
 
@@ -152,7 +153,29 @@ epistatic GRM). For a standard additive GRM $$d$$ is $$1 + F$$ averaged over the
 Values that are not finite (for example an SE that could not be derived from the
 AI matrix) print as `NA`.
 
-`<out>.sln` has the columns `type term levels effect se`. `type` is `0` for the intercept (`mu`), `1` for a covariate and `2` for a class level. A fixed-effect column removed as linearly dependent is listed with `0 0`. With `--predict`, type `3` rows hold the predicted genetic values (term = 1-based GRM index, levels = individual ID) and type `4` rows the predicted `--random` / `permanent` effects (term = 1-based effect index, levels = level).
+`<out>.sln` has the columns `type term levels effect se`, and with `--predict` also `rel`. `type` is `0` for the intercept (`mu`), `1` for a covariate and `2` for a class level. A fixed-effect column removed as linearly dependent (for example the reference level of a class variable) is listed with effect `0` and se `NA`. With `--predict`, type `3` rows hold the predicted genetic values (BLUP) and type `4` rows the predicted `--random` / `permanent` effects. For these rows `term` is the variance component as named in `<out>.var` (`G`, the GRM prefix basename, `permanent` or the `--random` column), `levels` is the individual ID or level, `se` is the square root of the prediction error variance (PEV), and `rel` is the reliability $$1 - \mathrm{PEV} / (\sigma^2_k K_{jj})$$ ($$K_{jj}$$ = GRM diagonal, `1` for a non-genetic effect); `rel` is `NA` on the fixed-effect rows. GRM rows cover every GRM individual, including those without records, whose values are predicted through their relationships. Numbers keep 10 significant digits. From the [repeated-records](#repeated-records) example with `--predict` (first rows of each kind):
+
+```
+type	term	levels	effect	se	rel
+0	mu	1	19.7737604	0.07620444974	NA
+2	Sex	1	-2.65796099	0.09581998468	NA
+2	Sex	2	0	NA	NA
+2	week	1	-13.23082676	0.05535989006	NA
+...
+3	mouse_long	1419	0.4080401921	0.3347456694	0.71612076
+...
+4	permanent	1000	-0.7212183419	0.4809213132	0.9077624809
+...
+```
+
+`<out>.res` (with `--predict`) has one row per record: `id observed fixed random residual`, where `fixed` is $$x_i'\hat b$$, `random` is the sum of the predicted random effects of the record and `residual` is $$\hat e_i$$, so that `observed` = `fixed` + `random` + `residual`. `observed` - `fixed` is the phenotype corrected for the fixed effects. From the same run:
+
+```
+id	observed	fixed	random	residual
+1419	4.9	3.884972647	0.4058137606	0.6092135924
+1419	8.4	7.348924696	0.4058137606	0.6452615437
+...
+```
 
 The `<out>.assoc` columns depend on the solver.
 
@@ -189,7 +212,7 @@ Columns: chromosome `chr`, SNP ID `snp`, position `pos`, effect allele `a1` and 
 | `--val` | `0.001` for `mme`, `0` otherwise | Value added to the GRM diagonal (see Section 2) |
 | `--maxiter0` | `100` | Max iterations for the null-model fit |
 | `--continue` | off | Start from the variances in an existing `<out>.var` |
-| `--predict` | off | Also write the predicted random effects to `<out>.sln` |
+| `--predict` | off | Also write the predicted random effects and their reliabilities to `<out>.sln`, and `<out>.res` |
 | `--threads` | `10` | Number of MKL/OpenMP threads |
 
 ### SNP scan

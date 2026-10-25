@@ -99,7 +99,7 @@ The SE comes from the inverse AI matrix of the working model at the final linear
 
 ### `<out>.sln`
 
-The columns are `type term levels effect se`, as in [REMMA](../05_REMMA/): `type` is `0` for the intercept (`mu`), `1` for a covariate and `2` for a class level; a dependent column is listed with `0 0`. The estimates and their SEs both come from the final linearization (the $$y^*$$, $$W$$ and $$V$$ used by the SNP test): $$\hat b = (X' V^{-1} X)^{-1} X' V^{-1} y^*$$ with SEs from $$(X' V^{-1} X)^{-1}$$.
+The columns are `type term levels effect_logit se`, as in [REMMA](../05_REMMA/) but with the estimate column named for its scale: `type` is `0` for the intercept (`mu`), `1` for a covariate and `2` for a class level; a dependent column is listed with effect `0` and se `NA`. The estimates and their SEs both come from the final linearization (the $$y^*$$, $$W$$ and $$V$$ used by the SNP test): $$\hat b = (X' V^{-1} X)^{-1} X' V^{-1} y^*$$ with SEs from $$(X' V^{-1} X)^{-1}$$.
 
 ### `<out>.assoc`
 
