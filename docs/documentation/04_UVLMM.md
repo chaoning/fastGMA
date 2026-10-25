@@ -34,24 +34,29 @@ The model is chosen with `--model` (default `lmm`). The fitting algorithm is cho
 
 | `--model` | Model | `--solver` | Requires |
 | --- | --- | --- | --- |
-| `lmm` (default) | One GRM as random effect | `eigen` (default) or `general` | `--grm` |
+| `lmm` (default) | One GRM as random effect | `eigen` (default), `mme` or `general` | `--grm` |
 | `lm` | Linear model, no random effect | not used | — |
-| `multi-grm` | Several GRMs as random effects | `general` only | `--mgrm` |
-| `repeat` | GRMs plus a permanent (individual) effect for repeated records | `general` only | `--mgrm` |
+| `multi-grm` | Several GRMs as random effects | `general` (default) or `mme` | `--mgrm` |
+| `repeat` | GRMs plus a permanent (individual) effect for repeated records | `mme` (default) or `general` | `--mgrm` |
 
-The two solvers:
+The three solvers:
 
 | `--solver` | Method | Notes |
 | --- | --- | --- |
 | `eigen` | The GRM is eigendecomposed once and the data are rotated. REML and the per-SNP tests then cost $$O(n)$$ per evaluation. | `--model lmm` only. Needs one record per individual. `--random` is not allowed. Supports `--refit` / `--no-refit`. |
+| `mme` | AI-REML on Henderson's mixed model equations (WEMAI as for `general`). The equations have one row per fixed effect and per random-effect level, so their size does not grow with the number of records; each GRM is inverted once. | Allows repeated records and `--random`. Needs positive-definite GRMs (see `--val` below). Same estimates and tests as `general`. Exact re-tests use the null variances. |
 | `general` | Dense AI-REML on the $$n \times n$$ covariance matrix (WEMAI: the AI matrix is blended with the EM matrix when needed to keep variances positive). | Allows repeated records and `--random`. Exact re-tests use the null variances. |
+
+**`mme` or `general`.** Both fit the same model; they differ in cost. Each `general` iteration factorizes the $$n \times n$$ covariance matrix of the $$n$$ records, while `mme` works with a matrix of size $$p + \sum_k q_k$$ ($$p$$ fixed effects, $$q_k$$ levels of random effect $$k$$). With many records per individual, as for repeated measures, `mme` is much faster and needs far less memory: on `example/mouse_long` (19,392 records of 1,212 mice, `--model repeat`, 8 threads) the null model and the scan of 11,833 SNPs take about 4 s and 0.2 GB in total. With one record per individual and one GRM, `eigen` is the fastest. When `--solver general` is used with at least twice as many records as individuals, the log suggests `--solver mme`.
+
+**GRM diagonal (`--val`).** `mme` needs the inverse of each GRM, and a centered GRM is singular (its rows sum to zero). `mme` therefore adds `--val` (default `0.001`) to the GRM diagonal when it reads the GRM, as `--longwas` does. The other solvers add nothing unless `--val` is given. To compare `mme` with `general` on the same model, give both the same `--val`. If a GRM is still not positive definite (for example, duplicated individuals), the run stops and suggests a larger `--val`.
 
 Rules checked at start-up:
 
-- `--solver eigen` with `--model lm` is an error. `--solver general` with `--model lm` is ignored with a warning.
+- `--solver eigen` or `--solver mme` with `--model lm` is an error. `--solver general` with `--model lm` is ignored with a warning.
 - `--solver eigen` with `--model multi-grm` or `--model repeat` is an error.
-- `--random` with `--solver eigen` is an error. Use `--model lmm --solver general` to add non-genetic random effects.
-- An individual with more than one record is an error with `--solver eigen`. Use `--solver general`, or `--model repeat` for a permanent effect.
+- `--random` with `--solver eigen` is an error. Use `--model lmm --solver mme` (or `general`) to add non-genetic random effects.
+- An individual with more than one record is an error with `--solver eigen`. Use `--solver mme` (or `general`), or `--model repeat` for a permanent effect.
 - `--model repeat` cannot be combined with `--random`.
 - `--refit` is accepted only with `--solver eigen`.
 
@@ -69,7 +74,7 @@ A whitespace- or tab-separated table with a header row. The first column must be
 | `--trait` | Column name of the trait — exactly one (**required**; UVLMM is univariate) |
 | `--covar` | Column name(s) of continuous covariates |
 | `--class` | Column name(s) of categorical covariates |
-| `--random` | Column name(s) of additional non-genetic random effects (`--solver general` only) |
+| `--random` | Column name(s) of additional non-genetic random effects (`--solver mme` or `general`) |
 | `--missing-data` | Tokens treated as missing in the data table (default `NA NaN nan N/A ...`) |
 
 ### GRM input
@@ -78,6 +83,7 @@ A whitespace- or tab-separated table with a header row. The first column must be
 | --- | --- |
 | `--grm` | Prefix of a single GRM (`--model lmm`) |
 | `--mgrm` | Prefixes of one or more GRMs (`--model multi-grm` / `--model repeat`) |
+| `--val` | Value added to the GRM diagonal when it is read (default `0.001` for `--solver mme`, `0` otherwise; see Section 2) |
 
 All `--mgrm` GRMs must list the same individuals in the same order. As elsewhere in `fastGMA`, GRMs are referenced by prefix (e.g. `--grm output/test`), not by a single file name. GRMs built by `fastgma --make-grm` and by GCTA are both accepted; see [GRM](../03_GRM/) for how to build them.
 
@@ -164,13 +170,13 @@ chr snp pos a1 a2 af N cc_par cc_gra beta se p_score p_lrt p_wald
 chr snp pos a1 a2 af N beta se p_score p_lrt p_wald
 ```
 
-`--solver general` (`--model lmm --solver general`, `multi-grm`, `repeat`): only the Wald test is computed, so a single `p` column is written:
+`--solver general` or `mme` (`multi-grm`, `repeat`, or `--model lmm` with either solver): only the Wald test is computed, so a single `p` column is written:
 
 ```
 chr snp pos a1 a2 af N beta se p
 ```
 
-Columns: chromosome `chr`, SNP ID `snp`, position `pos`, effect allele `a1` and other allele `a2`, allele frequency of `a1` (or feature mean) `af`, `N` (number of individuals with a non-missing genotype), the effect estimate `beta` with its standard error `se`, and the p-values. SNPs that fail the MAF/missing-rate filters report `nan`. With `--p-cut` below `1`, only SNPs whose final p (`p_wald`, or `p` for the general solver) is at or below the cut are written.
+Columns: chromosome `chr`, SNP ID `snp`, position `pos`, effect allele `a1` and other allele `a2`, allele frequency of `a1` (or feature mean) `af`, `N` (number of individuals with a non-missing genotype), the effect estimate `beta` with its standard error `se`, and the p-values. SNPs that fail the MAF/missing-rate filters report `nan`. With `--p-cut` below `1`, only SNPs whose final p (`p_wald`, or `p` for the general and mme solvers) is at or below the cut are written.
 
 ## 5. Key options
 
@@ -179,7 +185,8 @@ Columns: chromosome `chr`, SNP ID `snp`, position `pos`, effect allele `a1` and 
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `--model` | `lmm` | `lmm`, `lm`, `multi-grm` or `repeat` |
-| `--solver` | `eigen` for `lmm`; `general` for `multi-grm` / `repeat` | `eigen` or `general` (see Section 2) |
+| `--solver` | `eigen` for `lmm`; `general` for `multi-grm`; `mme` for `repeat` | `eigen`, `mme` or `general` (see Section 2) |
+| `--val` | `0.001` for `mme`, `0` otherwise | Value added to the GRM diagonal (see Section 2) |
 | `--maxiter0` | `100` | Max iterations for the null-model fit |
 | `--continue` | off | Start from the variances in an existing `<out>.var` |
 | `--predict` | off | Also write the predicted random effects to `<out>.sln` |
@@ -270,6 +277,21 @@ fastgma --uvlmm --model lmm --solver general \
   --random litter \
   --out output/test_uvlmm_litter
 ```
+
+### Repeated records
+
+```bash
+fastgma --make-grm --bfile example/mouse_long/plink --out output/mouse_long
+fastgma --uvlmm --model repeat \
+  --mgrm output/mouse_long \
+  --bfile example/mouse_long/plink \
+  --data example/mouse_long/phe.balance.txt \
+  --trait trait \
+  --class Sex week \
+  --out output/mouse_long_repeat
+```
+
+16 weekly body weights of each of 1,212 mice: the GRM, a permanent effect per mouse and the residual. `--solver mme` is the default for `--model repeat`.
 
 ### Multiple GRMs
 

@@ -32,7 +32,7 @@ V &= \textstyle\sum_k \sigma^2_k Z G_k Z' + \sigma^2_e I
 \end{aligned}
 $$
 
-$$Xb$$ holds the fixed effects (intercept, covariates, class variables). Each $$u_k$$ is a random effect with covariance matrix $$G_k$$, one per GRM given with `--mgrm`. $$Z$$ maps records to individuals, so repeated records per individual are allowed and are used by every test. The variance components are estimated once by AI-REML (WEMAI: the AI matrix is blended with the EM matrix when needed to keep the variances positive). The start values are scale-aware: the phenotypic variance is split evenly over the $$K$$ GRMs and the residual. All tests below reuse $$V$$ from this fit, and the variances are not re-estimated for each SNP.
+$$Xb$$ holds the fixed effects (intercept, covariates, class variables). Each $$u_k$$ is a random effect with covariance matrix $$G_k$$, one per GRM given with `--mgrm`. $$Z$$ maps records to individuals, so repeated records per individual are allowed and are used by every test. The variance components are estimated once by AI-REML (WEMAI: the AI matrix is blended with the EM matrix when needed to keep the variances positive). The start values are scale-aware: the phenotypic variance is split evenly over the $$K$$ GRMs and the residual. `--solver general` (default) fits on the dense $$n \times n$$ $$V$$ of the $$n$$ records; `--solver mme` fits the same model on the mixed model equations, whose size does not grow with the number of records, and is much faster with many repeated records (see [uvLMM](../04_UVLMM/), Section 2). Both give the same estimates and tests. `mme` adds `--val` (default `0.001`) to each GRM diagonal so that the GRM can be inverted; give `general` the same `--val` to fit the identical model. All tests below reuse $$V$$ from this fit, and the variances are not re-estimated for each SNP.
 
 Let $$P = V^{-1} - V^{-1} X (X' V^{-1} X)^{-1} X' V^{-1}$$, $$S = Z'PZ$$ and $$s = Z'Py$$. Genotypes are coded per individual as the number of copies of the A1 allele (`0/1/2`). Missing genotypes are replaced by the SNP mean $$2p$$ for the additive code.
 
@@ -246,6 +246,8 @@ Only pairs in which both SNPs pass the filters are written. Without `--marginal`
 | `--parallel <m> <i>` | — | Split the scan into `m` parts and run part `i` (1-based); with `--epis`, parts hold about equal numbers of pairs |
 | `--p-cut` | `1` | Write SNPs/pairs whose final p is at or below this. For dominance a row is kept if `p_add` or `p_dom` passes. `1` writes all |
 | `--p-approx-cut` | `1e-3` | `--epis`: re-test pairs exactly when the approximate p is below this; `1` = exact test for every pair |
+| `--solver` | `general` | Null-model algorithm: `general` (dense $$V$$) or `mme` (mixed model equations; for many repeated records) |
+| `--val` | `0.001` for `mme`, `0` for `general` | Value added to the GRM diagonal when it is read |
 | `--threads` | `10` | Number of threads |
 
 `--snp-set`, `--parallel` and `--start-pos`/`--end-pos` are mutually exclusive.
