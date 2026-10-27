@@ -102,7 +102,8 @@ All files share the `--out` prefix and are tab-separated with a header row. With
 | File | Contents |
 | --- | --- |
 | `<out>.var` | Polygenic variance(s) with standard errors (logit scale) |
-| `<out>.sln` | Fixed-effect estimates of the null model (logit scale) |
+| `<out>.sln` | Fixed-effect estimates of the null model (logit scale); with `--predict`, also the predicted genetic values (BLUP) and their reliabilities |
+| `<out>.res` | With `--predict`: the linear predictor of each record split into its fixed and random parts, and the fitted probability |
 | `<out>.assoc` | One row per SNP with the association results |
 | `<out>.log` | Log of the run (appended; `<out>.<m>_<i>.log` with `--parallel`, `<out>.<start>_<end>.log` with `--snp-set`) |
 
@@ -112,7 +113,13 @@ The header is `component variance se`, followed by one row per GRM component (`G
 
 ### `<out>.sln`
 
-The columns are `type term levels effect_logit se`, as in [REMMA](../05_REMMA/) but with the estimate column named for its scale: `type` is `0` for the intercept (`mu`), `1` for a covariate and `2` for a class level; a dependent column is listed with effect `0` and se `NA`. The estimates and their SEs come from the final linearization (the $$y^*$$, $$W$$ and $$V$$ of the SNP test): $$\hat b = (X' V^{-1} X)^{-1} X' V^{-1} y^*$$ with SEs from $$(X' V^{-1} X)^{-1}$$.
+The columns are `type term levels effect_logit se`, and with `--predict` also `rel`, as in [uvLMM](../04_UVLMM/) but with the estimate column named for its scale: `type` is `0` for the intercept (`mu`), `1` for a covariate and `2` for a class level; a dependent column is listed with effect `0` and se `NA`. The estimates and their SEs come from the final linearization (the $$y^*$$, $$W$$ and $$V$$ of the SNP test): $$\hat b = (X' V^{-1} X)^{-1} X' V^{-1} y^*$$ with SEs from $$(X' V^{-1} X)^{-1}$$.
+
+With `--predict`, type `3` rows hold the predicted genetic values of every GRM individual (including those without records, predicted through their relationships), one block per GRM. `term` is the component as named in `<out>.var` and `levels` the individual ID. As in uvLMM, they come from the working model of the final linearization: $$\hat g_k = \sigma^2_k G_k Z' P y^*$$ on the logit scale, `se` is the square root of the prediction error variance $$\mathrm{PEV}_k = \sigma^2_k \operatorname{diag}(G_k) - \sigma^4_k \operatorname{diag}(G_k Z'PZ G_k)$$, and `rel` is the reliability $$1 - \mathrm{PEV} / (\sigma^2_k G_{jj})$$ (`NA` on the fixed-effect rows and for a variance on the boundary). Numbers keep 10 significant digits.
+
+### `<out>.res`
+
+With `--predict`, one row per record: `id observed fixed random mu`. `observed` is the `0`/`1` trait, `fixed` is $$x_i'\hat b$$ and `random` the sum of the predicted genetic values of the record, both on the logit scale, and `mu` $$= 1 / (1 + e^{-(\text{fixed} + \text{random})})$$ is the fitted probability. At convergence the mean of `mu` equals the fraction of cases (the score equation of the intercept).
 
 ### `<out>.assoc`
 
@@ -160,6 +167,7 @@ With few cases the polygenic variance is often estimated at the boundary: in a s
 | `--maf` | `0.01` | Keep SNPs with $$\min(p, 1 - p)$$ at or above this, in `[0, 0.5]` (`--bfile` only) |
 | `--missing-rate` | `0.05` | Keep SNPs with missing rate at or below this |
 | `--spa-cut` | `0.05` | Saddlepoint approximation for SNPs with `p_normal` below this; `0` = off, `1` = every SNP |
+| `--predict` | off | Also write the predicted genetic values and their reliabilities to `<out>.sln`, and `<out>.res` |
 | `--snp-set <first> <last>` | — | Test SNPs from the first to the last SNP ID (inclusive) |
 | `--parallel <m> <i>` | — | Split the SNPs into `m` parts and test part `i` (1-based) |
 | `--p-cut` | `1` | Write SNPs whose `p` is at or below this; `1` writes all |

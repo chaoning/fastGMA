@@ -1,4 +1,4 @@
-Output of `fastgma -h <n>` for every mode. fastGMA cb4b6e2 (built 2026-10-27, oneMKL 2025.0.2)
+Output of `fastgma -h <n>` for every mode. fastGMA 3077860 (built 2026-10-27, oneMKL 2025.0.2)
 
 ==> fastgma -h 1 <==
 
@@ -325,6 +325,8 @@ OPTIONS:
                               Missing value tokens in the --ffile matrix (PLINK BED encodes
                               missing calls itself)
           --out TEXT REQUIRED Output file prefix
+          --predict           Also write the predicted genetic values (BLUP, logit scale) and
+                              their reliabilities to <out>.sln, and <out>.res
           --trait TEXT REQUIRED
                               Binary (0/1) trait column name (single trait)
           --covar TEXT ...    Covariate column names
