@@ -1,0 +1,21 @@
+---
+layout: null
+---
+# fastGMA documentation (full text)
+
+This file collects the fastGMA documentation ({{ '/' | absolute_url }}) and the output of `fastgma -h <n>` for every mode in one plain-text file, for AI assistants and offline reading. Each page is given in its Markdown source, starting with its front matter (title, description). The `fastgma -h <n>` output at the end is the authoritative list of options and defaults.
+{% assign doc_pages = site.pages | where_exp: "p", "p.path contains 'documentation/'" | sort: "order" %}
+================================================================
+Page: {{ '/' | absolute_url }}
+================================================================
+{% include_relative index.md %}
+{% for p in doc_pages %}
+================================================================
+Page: {{ p.url | absolute_url }}
+================================================================
+{% include_relative {{ p.path }} %}
+{% endfor %}
+================================================================
+fastgma -h <n>
+================================================================
+{% include fastgma-help.txt %}

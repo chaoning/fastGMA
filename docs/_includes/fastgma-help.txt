@@ -1,0 +1,587 @@
+Output of `fastgma -h <n>` for every mode. fastGMA bf68276 (built 2026-10-25, oneMKL 2025.0.2)
+
+==> fastgma -h 1 <==
+
+Compute dense genomic relationship matrices (GRMs) in GCTA format:
+lower-triangular
+float32 `<out>.grm.bin`, "FID IID" `<out>.grm.id`, per-pair SNP counts
+`<out>.grm.N.bin`, plus a text `<out>.grm.N` (SNPs used, scale factor).
+
+Defaults:
+--grm-type add
+--code-type 2
+--maf 0.01
+--missing-rate 0.05
+--val 0
+
+Quick start:
+Additive GRM from PLINK BED
+fastgma --make-grm --bfile test --out test
+
+Additive GRM from feature matrix
+fastgma --make-grm --ffile test --out test
+
+Dominance GRM (statistical coding)
+fastgma --make-grm --grm-type dom --bfile test --out test
+
+Variance-scaled alternative
+fastgma --make-grm --bfile test --code-type 1 --out test
+
+Additive GRM with SNP-effect variance proportional to (2pq)^alpha
+fastgma --make-grm --bfile test --alpha -0.25 --out test
+
+Leave-one-chromosome-out GRM for chromosome 6, with frequencies saved
+fastgma --make-grm --bfile test --not-chr 6 --write-freq --out test_loco6
+
+fastgma [OPTIONS]
+
+OPTIONS:
+  -h,     --help              Print this help message and exit
+  -m,     --make-grm          Calculate GRM
+          --threads INT       Number of threads (default: 10)
+          --grm-type TEXT:{add,dom} [add]
+                              GRM type (add, dom)
+          --bfile TEXT Excludes: --ffile
+                              Prefix for PLINK binary PED files
+          --ffile TEXT Excludes: --bfile
+                              Prefix for feature-by-sample matrix files
+          --out TEXT REQUIRED Prefix for output file
+          --code-type INT:{1,2} [2]  Excludes: --alpha
+                              Genotype coding type (1 or 2)
+          --alpha FLOAT Excludes: --code-type
+                              Additive GRM: SNP-effect variance proportional to (2pq)^alpha
+                              (default: -1)
+          --npart INT:POSITIVE [[1,1]]  x 2
+                              Partition GRM elements: <npart> <ipart>
+          --npart-snp INT:POSITIVE [20]
+                              Partition SNPs into n parts
+          --maf FLOAT [0.01]  MAF cutoff value
+          --missing-rate FLOAT [0.05]
+                              Maximum allowed missing rate
+          --keep TEXT         Keep only these individuals (one IID, or FID IID, per line)
+          --remove TEXT       Remove these individuals (one IID, or FID IID, per line)
+          --extract TEXT      Use only the SNPs listed in the first column (--bfile)
+          --exclude TEXT      Leave out the SNPs listed in the first column (--bfile)
+          --chr TEXT ...      Use only these chromosomes, e.g. 1-22 or 1,3,5 (--bfile)
+          --not-chr TEXT ...  Leave out these chromosomes, e.g. 6 for a LOCO GRM (--bfile)
+          --read-freq TEXT    Use the A1 frequencies in this file (header with SNP, A1, FREQ;
+                              --bfile)
+          --write-freq        Write the A1 frequency of every selected SNP to <out>.freq
+                              (--bfile)
+          --val FLOAT [0]     Value added to the GRM diagonal (default: 0)
+          --missing-geno TEXT [[NA,Na,na,NAN,NaN,nan,-NAN,-NaN,-nan,<NA>,<na>,N/A,n/a]]  ...
+                              Missing genotype values (space-separated)
+
+==> fastgma -h 2 <==
+Quick start:
+Merge partitioned GRMs
+fastgma --process-grm --merge --grm test --npart 5
+
+PCA
+fastgma --process-grm --pca --grm test --out test # test.eigenval, test.eigenvec
+(top 20 PCs)
+fastgma --process-grm --pca --num-pc 0 --grm test --out test # all PCs
+
+Epistatic GRM from two dense GRMs
+fastgma --process-grm --make-epis --prefix1 test1 --prefix2 test2 --out test
+
+Reformat GRM
+fastgma --process-grm --reformat --grm test --out-fmt 0 --out test #
+test.grm.matrix
+fastgma --process-grm --reformat --grm test --out-fmt 1 --out test #
+test.grm.index_triplet
+fastgma --process-grm --reformat --grm test --out-fmt 2 --out test #
+test.grm.iid_triplet
+fastgma --process-grm --reformat --grm test --out-fmt 3 --out test #
+test.grm.bin
+fastgma --process-grm --reformat --sparse --grm test --out-fmt 0 --out test #
+test.grm.matrix
+fastgma --process-grm --reformat --sparse --grm test --out-fmt 1 --out test #
+test.grm.index_triplet
+fastgma --process-grm --reformat --sparse --grm test --out-fmt 2 --out test #
+test.grm.iid_triplet
+fastgma --process-grm --reformat --sparse --grm test --out-fmt 3 --out test #
+test.grm.sp.bin
+
+GRM inverse
+fastgma --process-grm --make-inv --grm test --out-fmt 0 --out test.inv #
+test.inv.grm.matrix (diag + --val, default 0.001)
+fastgma --process-grm --make-inv --grm test --out-fmt 1 --out test.inv #
+test.inv.grm.index_triplet
+fastgma --process-grm --make-inv --grm test --out-fmt 2 --out test.inv #
+test.inv.grm.iid_triplet
+fastgma --process-grm --make-inv --grm test --out-fmt 3 --out test.inv #
+test.inv.grm.bin
+
+Output one IID from each close pair
+fastgma --process-grm --out-close --grm test --out test
+
+Group related IIDs
+fastgma --process-grm --group --grm test --cut-value 0.05
+
+fastgma [OPTIONS]
+
+OPTIONS:
+  -h,     --help              Print this help message and exit
+  -d,     --process-grm REQUIRED
+                              Process an existing GRM
+          --threads INT       Number of threads (default: 10)
+          --merge             Merge GRM files
+          --pca               Perform PCA
+          --make-epis         Calculate epistatic GRM
+          --reformat          Reformat GRM
+          --make-inv          Calculate the inverse of GRM
+          --out-close         Output pairs with GRM larger than cut value
+          --group             Group individuals by GRM relationships
+          --grm TEXT          GRM prefix without the .grm suffix
+          --out TEXT          Output prefix without the .grm suffix
+          --prefix1 TEXT      First dense GRM prefix without the .grm suffix for --make-epis
+          --prefix2 TEXT      Second dense GRM prefix without the .grm suffix for --make-epis
+          --npart INT         Partition count (for merging)
+          --out-fmt INT       Output format: 0=matrix, 1=index_triplet, 2=iid_triplet, 3=binary
+          --cut-value FLOAT   Cutoff value for filtering
+          --val FLOAT         Value added to the diagonal before --make-inv (default: 0.001)
+          --num-pc INT        Number of leading PCs written by --pca (0 = all; default: 20)
+          --sparse [0]        Indicate sparse GRM
+
+==> fastgma -h 3 <==
+Univariate linear mixed model GWAS (UVLMM)
+
+fastgma [OPTIONS]
+
+OPTIONS:
+  -h,     --help              Print this help message and exit
+          --threads INT [10]  Number of threads
+          --model TEXT:{lmm,lm,multi-grm,repeat} [lmm]
+                              Model to fit: lmm (single GRM, default), lm (no random effect),
+                              multi-grm (multiple GRMs), repeat (repeated measures)
+          --solver TEXT:{general,eigen,mme}
+                              Fitting algorithm: eigen (eigendecomposition of the single --grm,
+                              one record per individual; default for --model lmm), mme (AI-REML
+                              on the mixed model equations, whose size is the number of fixed
+                              effects plus random-effect levels, not records; default for
+                              --model repeat and the choice for many repeated records; needs
+                              positive-definite GRMs) or general (AI-REML on the dense n x n V;
+                              default for --model multi-grm). Not used by --model lm.
+          --data TEXT         Data file (required)
+          --trait TEXT REQUIRED
+                              Column name for the trait (single trait only)
+          --covar TEXT ...    Column names for covariates
+          --class TEXT ...    Column names for class variates
+          --random TEXT ...   Column names for non-genetic random effects
+          --missing-data TEXT ...
+                              Missing value in data file
+          --grm TEXT          Prefix for additive GRM file
+          --mgrm TEXT ...     Prefixes for multiple GRM files
+          --val FLOAT         Value added to the GRM diagonal when it is read (default 0.001
+                              for --solver mme, which inverts the GRM and a centred GRM is
+                              singular; 0 for the other solvers)
+          --bfile TEXT        Prefix for PLINK binary files
+          --ffile TEXT        Prefix for feature-matrix files (.fam, .bim, .fmat). Each .fmat
+                              row is one feature and each column one sample,
+                              whitespace-separated; suitable for imputed dosages, expression,
+                              or any continuous per-sample matrix.
+          --missing-geno TEXT ...
+                              Missing value in genotype file
+          --out TEXT REQUIRED Output prefix
+          --predict           Output predicted values for random effects
+          --continue          Continue from last saved variances
+          --maxiter0 INT [100]
+                              Max iterations for null model
+          --snp-set TEXT x 2  Start and end SNP IDs to test (inclusive)
+          --p-approx-cut FLOAT [0.001]
+                              SNPs whose approximate p is below this are re-tested exactly (0 =
+                              approximate test only; 1 = exact test for every SNP)
+          --refit, --no-refit{false}
+                              Eigen solver: re-estimate the variance components for every SNP
+                              that is re-tested exactly (default on; --no-refit tests at the
+                              null variances). --refit --p-approx-cut 1 refits every SNP.
+          --p-cut FLOAT [1]   Write only SNPs whose final p-value (p_wald; p for the general
+                              solver) is <= this (1 = all)
+          --maf FLOAT [0.01]  Minimum minor allele frequency, min(p, 1-p) (PLINK input)
+          --missing-rate FLOAT [0.05]
+                              Keep a SNP if its missing rate is <= this
+          --maxiter INT [30]  Max iterations for SNP testing
+          --parallel INT x 2  Partition into m parts and test part i
+
+Advanced:
+          --cc-par0 FLOAT [1e-07]
+                              Convergence criterion for parameters (null)
+          --cc-gra0 FLOAT [1e-06]
+                              Convergence criterion for gradient (null)
+          --cc-logl0 FLOAT [5e-05]
+                              Convergence criterion for the change in log-likelihood (null)
+          --cc-par FLOAT [1e-07]
+                              Convergence criterion for parameters
+          --cc-gra FLOAT [1e-06]
+                              Convergence criterion for gradient
+          --npart-snp INT [20]
+                              Partition SNPs into parts (memory/IO chunking; does not affect
+                              results)
+          --num-random-snp INT [2000]
+                              Random SNPs for approximate-test calibration (auto-capped to
+                              #SNPs)
+          --seed UINT [42]    Random seed for drawing the calibration SNPs (--num-random-snp);
+                              fixed so results are reproducible
+          --start-pos INT [0]
+                              0-based index of the first SNP to test
+          --end-pos INT [-1]  0-based index one past the last SNP to test (-1 = all)
+
+==> fastgma -h 4 <==
+REMMA: Random Effect Model for Multiple Associations
+
+fastgma [OPTIONS]
+
+OPTIONS:
+  -h,     --help              Print this help message and exit
+          --data TEXT         Phenotype/covariate table (required; header line, first column =
+                              individual ID)
+          --mgrm TEXT ... REQUIRED
+                              GRM file prefix(es) of the null model; one or more
+          --bfile TEXT REQUIRED
+                              PLINK BED file prefix
+          --out TEXT REQUIRED Output file prefix
+          --trait TEXT REQUIRED
+                              Trait column name (single trait)
+          --covar TEXT ...    Covariate column names
+          --class TEXT ...    Class (categorical) covariate column names
+          --missing-data TEXT ...
+                              Missing value tokens in the data file (default: NA NaN nan N/A
+                              ...)
+          --add               Additive test (exact GLS statistic with the null-model V)
+          --dom               Dominance test, statistical coding: joint additive + dominance
+                              GLS per SNP
+          --epis              Additive x additive epistasis test of SNP pairs (i, j > i) with
+                              SNP i in the tested range
+          --marginal          epis: fit both main effects and the interaction per SNP pair
+                              (slower, exact)
+          --maf FLOAT [0.01]  Keep SNPs with minor-allele frequency min(p, 1-p) >= maf
+          --missing-rate FLOAT [0.05]
+                              Keep SNPs with missing rate <= cutoff
+          --min-geno-count INT [0]
+                              Minimum number of individuals in each genotype class for the
+                              dominance test (0 = off)
+          --snp-set TEXT x 2  Test SNPs from the first to the second SNP ID (inclusive); epis:
+                              pairs whose first SNP is in this set
+          --parallel INT x 2  Split the scan into m parts and run part i (1-based): m i; epis
+                              parts hold about equal numbers of pairs
+          --p-cut FLOAT [1]   Write SNPs/pairs whose final p-value is <= p-cut (dominance:
+                              p_add or p_dom); 1 = all
+          --p-approx-cut FLOAT [0.001]
+                              epis: re-test pairs exactly when the approximate p is below this;
+                              1 = exact test for every pair
+          --solver TEXT:{general,mme} [general]
+                              Null-model algorithm: general (AI-REML on the dense n x n V) or
+                              mme (AI-REML on the mixed model equations, whose size is the
+                              number of fixed effects plus GRM individuals, not records; the
+                              choice for many repeated records; needs positive-definite GRMs)
+          --val FLOAT         Value added to the GRM diagonal when it is read (default 0.001
+                              for --solver mme, which inverts the GRMs; 0 for general)
+          --threads INT [10]  Number of threads
+
+Advanced:
+          --npart-snp INT [20]
+                              Read the tested SNPs in this many chunks (memory only;
+                              --add/--dom-*)
+          --start-pos INT [0]
+                              First tested SNP (0-based index)
+          --end-pos INT [-1]  End of the tested SNPs (0-based, exclusive; -1 = last SNP)
+          --num-random-snp INT [10000]
+                              epis: random SNP pairs for the gamma calibration (capped at
+                              #SNPs)
+          --seed UINT [42]    epis: random seed for the gamma SNP-pair sample
+          --maxiter0 INT [100]
+                              Max iterations for the null model
+          --cc-par0 FLOAT [1e-07]
+                              Null-model convergence: norm of the parameter change
+          --cc-gra0 FLOAT [1e-06]
+                              Null-model convergence: norm of the gradient
+          --cc-logl0 FLOAT [5e-05]
+                              Null-model convergence: change in REML log-likelihood
+
+==> fastgma -h 5 <==
+GLMM: Generalized Linear Mixed Model GWAS (binary traits)
+
+fastgma [OPTIONS]
+
+OPTIONS:
+  -h,     --help              Print this help message and exit
+          --data TEXT         Phenotype/covariate table (required; header line, first column =
+                              individual ID)
+          --grm TEXT REQUIRED GRM file prefix
+          --bfile TEXT REQUIRED
+                              PLINK BED file prefix
+          --out TEXT REQUIRED Output file prefix
+          --trait TEXT REQUIRED
+                              Binary (0/1) trait column name (single trait)
+          --covar TEXT ...    Covariate column names
+          --class TEXT ...    Class (categorical) covariate column names
+          --missing-data TEXT ...
+                              Missing value tokens in the data file (default: NA NaN nan N/A
+                              ...)
+          --dom               Statistical dominance coding: joint additive + dominance test per
+                              SNP (default)
+          --maf FLOAT [0.01]  Keep SNPs with minor-allele frequency min(p, 1-p) >= maf
+          --missing-rate FLOAT [0.05]
+                              Keep SNPs with missing rate <= cutoff
+          --min-geno-count INT [0]
+                              Minimum number of individuals in each genotype class for the
+                              dominance test (0 = off)
+          --snp-set TEXT x 2  Test SNPs from the first to the second SNP ID (inclusive)
+          --parallel INT x 2  Split the SNPs into m parts and test part i (1-based): m i
+          --p-cut FLOAT [1]   Write SNPs whose p_add or p_dom is <= p-cut; 1 = all
+          --threads INT [10]  Number of threads
+
+Advanced:
+          --npart-snp INT [20]
+                              Read the tested SNPs in this many chunks (memory only)
+          --start-pos INT [0]
+                              First tested SNP (0-based index)
+          --end-pos INT [-1]  End of the tested SNPs (0-based, exclusive; -1 = last SNP)
+          --maxiter0 INT [100]
+                              Max outer (and inner) PQL iterations for the null model
+          --cc-par0 FLOAT [1e-07]
+                              Null-model convergence: change in variances and fixed effects
+          --cc-gra0 FLOAT [1e-06]
+                              Null-model convergence (inner loop): norm of the REML score
+
+==> fastgma -h 6 <==
+MVLMM: Multivariate Linear Mixed Model GWAS
+
+fastgma [OPTIONS]
+
+OPTIONS:
+  -h,     --help              Print this help message and exit
+          --data TEXT         Data file (required; whitespace-separated, header row, first
+                              column = individual ID)
+          --grm TEXT          Additive GRM file prefix
+          --bfile TEXT REQUIRED
+                              PLINK BED file prefix
+          --out TEXT REQUIRED Output file prefix
+          --mgrm TEXT ...     Further GRM file prefixes (general solver; fitted before --grm)
+          --missing-data TEXT ...
+                              Missing value tokens in the data file (default: NA, NaN, nan,
+                              N/A, ...)
+          --missing-geno TEXT ...
+                              Missing genotype tokens (not used for PLINK .bed input)
+          --condition-snp TEXT ...
+                              SNP IDs fitted as fixed covariates (one effect per trait) and
+                              excluded from the scan
+          --trait TEXT ... REQUIRED
+                              Trait column names (two or more traits; one is allowed)
+          --covar TEXT ...    Covariate column names; repeat once per trait in --trait order,
+                              or give once for all traits
+          --class TEXT ...    Class column names; repeat once per trait in --trait order, or
+                              give once for all traits
+          --random TEXT ...   ID column per random effect: one per GRM (--mgrm first, then
+                              --grm), then non-genetic effects (default: the ID column for
+                              every GRM)
+          --solver TEXT [general]
+                              general: any data (missing trait values, several GRMs, other
+                              random effects); eigen: eigendecomposition of the GRM, faster,
+                              needs complete (balanced) data, one --grm and no other random
+                              effects
+          --refit             Eigen solver only: re-estimate the variance components for the
+                              SNPs that are tested exactly (all SNPs with --p-approx-cut 1) and
+                              add an approximate LRT p-value column p_lrt
+          --predict           Predict random effects (general solver)
+          --continue          Start the null model from the estimates in <out>.var
+          --p-approx-cut FLOAT [0.001]
+                              SNPs whose approximate p-value is below this are re-tested
+                              exactly; 1 = exact test for every SNP, 0 = approximate test only
+          --maf FLOAT [0.01]  Minimum minor allele frequency
+          --missing-rate FLOAT [0.05]
+                              Maximum genotype missing rate (SNP kept if <= cutoff)
+          --p-cut FLOAT [1]   Write only SNPs with p <= this value (1 = all)
+          --snp-set TEXT x 2  First and last SNP ID (inclusive) to test
+          --parallel INT x 2  Split the scan into m parts and run part i (1-based): --parallel
+                              m i
+          --threads INT [10]  Number of threads
+
+Advanced:
+          --num-random-snp INT [2000]
+                              Random SNPs for the approximate-test calibration (capped at
+                              #SNPs)
+          --seed UINT [42]    Random seed for sampling the --num-random-snp SNPs
+          --npart-snp INT [20]
+                              Number of SNP blocks read in turn (memory only)
+          --start-pos INT [0]
+                              0-based index of the first SNP to test
+          --end-pos INT [-1]  0-based index one past the last SNP to test (-1 = all)
+          --maxiter0 INT [100]
+                              Max iterations for the null model
+          --cc-par0 FLOAT [1e-07]
+                              Null model: convergence criterion for the parameter change
+          --cc-gra0 FLOAT [1e-06]
+                              Null model: convergence criterion for the gradient norm
+          --cc-logl0 FLOAT [5e-05]
+                              Null model: convergence criterion for the logL change
+          --maxiter INT [30]  --refit: max iterations per SNP
+          --cc-par FLOAT [1e-07]
+                              --refit: convergence criterion for the parameter change
+          --cc-gra FLOAT [1e-06]
+                              --refit: convergence criterion for the gradient norm
+          --cc-logl FLOAT [5e-05]
+                              --refit: convergence criterion for the logL change
+
+==> fastgma -h 7 <==
+LonGWAS: Longitudinal GWAS using random regression
+
+fastgma [OPTIONS]
+
+OPTIONS:
+  -h,     --help              Print this help message and exit
+          --data TEXT         Data file (long format: one row per record, header row with
+                              column names)
+          --grm TEXT          Additive GRM prefix (<prefix>.grm.bin / .grm.id)
+          --bfile TEXT        PLINK BED prefix; without --bfile or --ffile only the null model
+                              is fitted
+          --ffile TEXT        Prefix for feature-matrix files (.fam, .bim, .fmat): each .fmat
+                              row is one feature (e.g. an imputed dosage) and each column one
+                              sample, whitespace-separated; tested like a SNP
+          --val FLOAT [0.001]
+                              Value added to the GRM diagonal to keep it positive definite
+          --out TEXT REQUIRED Output file prefix
+          --solver TEXT [general]
+                              general: MME-based REML, any (unbalanced) data; eigen:
+                              eigendecomposition of the GRM, needs one record per individual at
+                              each of the same time points
+          --missing-data TEXT ...
+                              Missing value tokens in the data file (default: NA, NaN, nan,
+                              N/A, ...)
+          --missing-geno TEXT ...
+                              Missing value tokens in the --ffile matrix (PLINK BED encodes
+                              missing calls itself)
+          --id-col TEXT       Column with the individual IDs (default: first column)
+          --trait TEXT ... REQUIRED
+                              Trait column (long format); with --solver eigen (wide format) the
+                              time columns in time order, e.g. w1:w16
+          --tpoint TEXT       Time point column (long format, --solver general)
+          --tpoint-values TEXT
+                              Wide format (--solver eigen): file with the time of each --trait
+                              column, one value per line, no header
+          --covar TEXT ...    Time-independent covariate columns
+          --class TEXT ...    Time-independent class columns
+          --time-covar TEXT ...
+                              Covariate columns with a time-varying (order --forder) effect
+          --time-class TEXT ...
+                              Class columns with a time-varying (order --forder) effect per
+                              level
+          --forder INT [2]    Order of the fixed regressions and of the SNP effect
+          --aorder INT [2]    Additive genetic regression order
+          --porder INT [2]    Permanent environmental regression order
+          --predict           Write the predicted random regression coefficients (G keeps all
+                              GRM individuals)
+          --h2-cum FLOAT x 2  Heritability of the trait summed over the observed time points in
+                              [from, to] (e.g. 305-day yield), with SE, to <out>.h2cum: from
+                              to; may be repeated
+          --continue          Start the null model from the estimates in <out>.var
+          --snp-set TEXT x 2  First and last SNP ID to test (inclusive)
+          --parallel INT x 2  Split the SNPs into m parts and test part i (1-based): m i
+          --p-approx-cut FLOAT [0.001]
+                              SNPs with an approximate p below this are re-tested exactly; 1 =
+                              exact test for every SNP
+          --refit             (--solver eigen) re-estimate the variance components for every
+                              SNP that is tested exactly
+          --maf FLOAT [0.01]  Minimum minor allele frequency
+          --missing-rate FLOAT [0.05]
+                              Maximum SNP missing rate
+          --p-cut FLOAT [1]   Write only SNPs with p <= this value (1 = all)
+          --seed UINT [42]    Random seed for sampling the calibration SNPs
+          --maxiter0 INT [100]
+                              Max iterations for null model
+          --threads INT [10]  Number of threads
+
+Advanced:
+          --start-pos INT [0]
+                              0-based index of the first SNP to test
+          --end-pos INT [-1]  0-based index one past the last SNP to test (-1 = all)
+          --npart-snp INT [20]
+                              Number of SNP chunks read in turn (memory only; does not change
+                              results)
+          --num-random-snp INT [2000]
+                              Random SNPs for the approximate-test calibration (capped at the
+                              number of SNPs)
+          --use-vmat          (--solver general) build the full V matrix for the SNP test
+          --cc-par0 FLOAT [1e-07]
+                              Null model: convergence when the norm of the parameter change is
+                              below this
+          --cc-gra0 FLOAT [1e-06]
+                              Null model: convergence when the norm of the gradient is below
+                              this
+          --cc-logl0 FLOAT [5e-05]
+                              Null model: convergence when the change in logL is below this
+          --maxiter INT [30]  Per-SNP refit (--solver eigen --refit): max iterations
+          --cc-par FLOAT [1e-07]
+                              Per-SNP refit (--solver eigen --refit): parameter convergence
+          --cc-gra FLOAT [1e-06]
+                              Per-SNP refit (--solver eigen --refit): gradient convergence
+          --cc-logl FLOAT [5e-05]
+                              Per-SNP refit (--solver eigen --refit): logL convergence
+
+==> fastgma -h 8 <==
+fastREML - dense-GRM variance components and heritability
+
+fastgma [OPTIONS]
+
+OPTIONS:
+  -h,     --help              Print this help message and exit
+          --fast-reml         Run the fastREML variance-component estimator
+          --grm TEXT          Dense GRM prefix (expects <grm>.grm.bin / .grm.id) (required)
+          --data TEXT         Phenotype/covariate data file with a header line (required)
+          --out TEXT REQUIRED Output prefix
+          --trait TEXT ... REQUIRED
+                              Trait column name (exactly one)
+          --covar TEXT ...    Numeric covariate column names (supports a:b ranges)
+          --class TEXT ...    Categorical covariate column names (one-hot)
+          --env-int TEXT ... REQUIRED
+                              Interacting environment column names
+          --threads INT [10]  Number of threads
+          --maxiter0 INT [20]
+                              Maximum REML iterations
+          --num-rand-vec INT [32]
+                              Stochastic trace probe vectors (implicit path)
+          --seed UINT [42]    Random seed for MoM / trace probe vectors
+          --cc-par0 FLOAT [0.0001]
+                              Relative parameter-change convergence threshold
+          --cc-gra0 FLOAT [0.01]
+                              Gradient-norm convergence threshold
+          --cc-logl0 FLOAT [0.01]
+                              |Delta(-2logL)| convergence threshold (OR-ed with
+                              --cc-par0/--cc-gra0)
+          --logl-lanczos INT [15]
+                              Lanczos steps for the SLQ log|V| / -2logL estimate (implicit
+                              path; 0 = off)
+          --pcg-tol FLOAT [1e-05]
+                              PCG relative residual tolerance
+          --pcg-maxiter INT [500]
+                              Maximum PCG iterations
+          --precond-rank INT [0]
+                              Randomized low-rank preconditioner rank (0 = diagonal only)
+          --precond-oversample INT [10]
+                              Oversampling columns for the low-rank range finder
+          --no-pcg-warmstart  Disable warm-starting each REML iteration's PCG from the previous
+                              solution
+          --exact-threshold INT [8000]
+                              Materialize K and run exact REML when n <= this
+          --matvec-block INT [0]
+                              RHS columns per streaming GRM pass (0 = auto: one pass per PCG
+                              round; caps implicit-path memory)
+          --force-implicit    Always use the implicit (streaming) path
+          --dry-run           Load data, cache kernel diagonals, time one streaming matvec,
+                              then exit
+          --in-memory         Load the whole GRM into RAM once (avoids re-streaming it per
+                              matvec)
+          --grm-single        With --in-memory, store the GRM as float (halves RAM, ample for
+                              REML)
+          --residualize       fastGxE-compatible: residualize the trait on the fixed effects
+                              and environments, then fit with P = V^-1 (default: strict REML
+                              keeping the fixed effects in P)
+          --no-noisebye       Drop the noise-by-environment component (3-component model)
+          --log-trait         Log-transform the trait before residualization (requires positive
+                              values)
+          --int-trait         Rank-based inverse-normal transform the residualized trait (Blom)
+          --no-standardize-env
+                              Do not standardize the environment columns
+          --missing-data TEXT ...
+                              Override missing-value labels

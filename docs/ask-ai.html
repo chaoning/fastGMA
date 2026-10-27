@@ -1,0 +1,272 @@
+---
+layout: page
+permalink: /ask-ai/
+title: Ask AI
+description: Describe your analysis in plain English or Chinese and get suggested fastGMA commands
+order: 10
+---
+
+<style>
+    .ask-ai[data-ui="en"] [lang="zh"], .ask-ai[data-ui="zh"] [lang="en"] { display: none !important; }
+    .ask-ai .lang-toggle { margin-bottom: 1em; }
+    .ask-ai textarea { font-family: inherit; }
+    .ask-ai .examples { margin: 0.6em 0 1.2em; }
+    .ask-ai .examples .btn { margin: 0 0.3em 0.4em 0; }
+    .ask-ai .actions .btn { margin: 0 0.4em 0.5em 0; }
+    .ask-ai #ask-ai-status { min-height: 1.5em; }
+    .ask-ai #ask-ai-output { display: none; font-family: monospace; font-size: 0.85em; }
+</style>
+
+<div class="ask-ai" id="ask-ai" data-ui="en">
+    <div class="btn-group btn-group-sm lang-toggle" role="group" aria-label="Language / 语言">
+        <button type="button" class="btn btn-outline-secondary" data-set-lang="en">English</button>
+        <button type="button" class="btn btn-outline-secondary" data-set-lang="zh">中文</button>
+    </div>
+
+    <p lang="en">Describe your data and the analysis you want. This page writes a prompt that contains the complete fastGMA documentation and the option list of every module. Give it to an AI assistant, and it suggests which module to use and the commands to run.</p>
+    <p lang="zh">用自然语言描述你的数据和想做的分析。本页会生成一段提示词，其中包含 fastGMA 的完整文档和每个模块的全部选项；把它交给 AI 助手，就能得到推荐的模块和可运行的命令。</p>
+
+    <label for="ask-ai-question">
+        <strong lang="en">Your task</strong>
+        <strong lang="zh">你的分析需求</strong>
+    </label>
+    <textarea id="ask-ai-question" class="form-control" rows="6"></textarea>
+
+    <div class="examples">
+        <span lang="en">Examples:</span>
+        <span lang="zh">示例：</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-example="gwas">
+            <span lang="en">GWAS + heritability</span><span lang="zh">GWAS 与遗传力</span>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-example="binary">
+            <span lang="en">Binary trait</span><span lang="zh">二分类性状</span>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-example="dominance">
+            <span lang="en">Dominance</span><span lang="zh">显性效应</span>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-example="multi">
+            <span lang="en">Several traits</span><span lang="zh">多性状</span>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-example="longitudinal">
+            <span lang="en">Repeated over time</span><span lang="zh">纵向数据</span>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-example="gxe">
+            <span lang="en">GxE variance</span><span lang="zh">GxE 方差</span>
+        </button>
+    </div>
+
+    <div class="actions">
+        <button type="button" class="btn btn-primary" id="ask-ai-copy">
+            <span lang="en">Copy prompt</span><span lang="zh">复制提示词</span>
+        </button>
+        <a class="btn btn-outline-primary" id="ask-ai-claude" href="https://claude.ai/new" target="_blank" rel="noopener">
+            <span lang="en">Open in Claude</span><span lang="zh">在 Claude 中打开</span>
+        </a>
+        <a class="btn btn-outline-primary" id="ask-ai-chatgpt" href="https://chatgpt.com/" target="_blank" rel="noopener">
+            <span lang="en">Open in ChatGPT</span><span lang="zh">在 ChatGPT 中打开</span>
+        </a>
+    </div>
+
+    <p id="ask-ai-status" role="status" aria-live="polite"></p>
+    <textarea id="ask-ai-output" class="form-control" rows="8" readonly aria-label="Prompt"></textarea>
+
+    <p lang="en"><strong>Copy prompt</strong> copies the prompt with the full documentation included (about 45k tokens). Paste it into any assistant, such as Claude, ChatGPT, <a href="https://chat.deepseek.com/" target="_blank" rel="noopener">DeepSeek</a> or <a href="https://www.kimi.com/" target="_blank" rel="noopener">Kimi</a>. This is the most reliable way.</p>
+    <p lang="zh"><strong>复制提示词</strong>会复制包含完整文档的提示词（约 4.5 万 token），可粘贴到任意 AI 助手，如 Claude、ChatGPT、<a href="https://chat.deepseek.com/" target="_blank" rel="noopener">DeepSeek</a>、<a href="https://www.kimi.com/" target="_blank" rel="noopener">Kimi</a>。这是最可靠的方式。</p>
+    <p lang="en"><strong>Open in Claude / ChatGPT</strong> opens a new chat with a shorter prompt that links to the documentation file. This works when the assistant can read web pages. If it says it cannot open the link, use <strong>Copy prompt</strong> instead.</p>
+    <p lang="zh"><strong>在 Claude / ChatGPT 中打开</strong>会新建对话，并填入一段较短的提示词，其中给出文档文件的链接。这需要助手能读取网页；如果它表示无法打开链接，请改用<strong>复制提示词</strong>。</p>
+
+    <div class="alert alert-warning" role="note">
+        <span lang="en">AI suggestions can be wrong. Before running a large job, check each option with <code>fastgma -h &lt;n&gt;</code> and the module page.</span>
+        <span lang="zh">AI 的建议可能出错。运行大规模任务前，请用 <code>fastgma -h &lt;n&gt;</code> 和对应模块的文档核对每个选项。</span>
+    </div>
+
+    <p lang="en">The documentation file used by the prompt: <a class="ask-ai-docs-link" href="{{ '/llms-full.txt' | relative_url }}">llms-full.txt</a>. Nothing you type is sent anywhere by this page.</p>
+    <p lang="zh">提示词所用的文档文件：<a class="ask-ai-docs-link" href="{{ '/llms-full.txt' | relative_url }}">llms-full.txt</a>。本页不会把你输入的内容发送到任何地方。</p>
+</div>
+
+<script>
+(function () {
+    var root = document.getElementById('ask-ai');
+    var question = document.getElementById('ask-ai-question');
+    var status = document.getElementById('ask-ai-status');
+    var output = document.getElementById('ask-ai-output');
+    var docsUrl = new URL('{{ "/llms-full.txt" | relative_url }}', location.href).href;
+    var storageKey = 'fastgma-ask-ai-lang';
+
+    var text = {
+        en: {
+            placeholder: 'e.g. I have PLINK genotypes and a phenotype file with height, age and sex. I want a GWAS for height and its heritability.',
+            empty: 'Please describe your task first.',
+            loading: 'Loading the documentation...',
+            copied: 'Copied (about {k}k tokens). Paste it into Claude, ChatGPT, DeepSeek, Kimi or another assistant.',
+            copyFailed: 'Could not copy automatically. Select the text below and copy it.',
+            docsFailed: 'Could not load the documentation file; the prompt links to it instead.',
+            intro: 'I use fastGMA ({site}), a command-line tool for genomic mixed-model analysis (GWAS, variance components and heritability, genomic prediction).',
+            docsInline: 'Its complete documentation and the output of `fastgma -h <n>` for every mode are given above between the <fastgma-docs> tags.',
+            docsLink: 'First read its complete documentation and the output of `fastgma -h <n>` for every mode at {url}',
+            rules: [
+                'Please suggest how to do my task with fastGMA:',
+                '1. Say which module or modules to use (for example --make-grm, --uvlmm, --glmm) and why, in one or two sentences.',
+                '2. Give complete fastgma commands in the order they must be run (for example, build the GRM first).',
+                '3. Use only options that appear in the `fastgma -h <n>` output, and do not invent options or values. If fastGMA cannot do the task, say so.',
+                '4. Where file names, column names or the trait type are not given, use clear placeholders such as <geno_prefix> and list your assumptions.',
+                '5. Briefly explain the key options and which output files to look at.',
+                '6. Answer in English.'
+            ],
+            task: 'My task:',
+            examples: {
+                gwas: 'I have PLINK genotypes (prefix geno) and a phenotype file pheno.txt with the columns id, height, age and sex. I want a GWAS for height adjusted for age and sex, and an estimate of its heritability.',
+                binary: 'I have a case-control disease trait (0/1) and PLINK genotypes for 5,000 individuals. I want a GWAS that accounts for relatedness.',
+                dominance: 'I want to estimate additive and dominance genetic variance for a trait and test each SNP for dominance effects.',
+                multi: 'I have three correlated traits measured on the same individuals, with some missing values. I want a joint GWAS of the three traits.',
+                longitudinal: 'Body weight of each mouse was measured every week from week 1 to week 16. I want to find SNPs whose effect changes with age.',
+                gxe: 'The same population was phenotyped in 40 environments. I want to estimate the genetic, GxE and environment-specific residual variances.'
+            }
+        },
+        zh: {
+            placeholder: '例如：我有 PLINK 格式的基因型和一个表型文件，包含身高、年龄和性别。想对身高做 GWAS，并估计遗传力。',
+            empty: '请先描述你的分析需求。',
+            loading: '正在加载文档……',
+            copied: '已复制（约 {k}k token）。请粘贴到 Claude、ChatGPT、DeepSeek、Kimi 或其他 AI 助手。',
+            copyFailed: '无法自动复制，请手动选中下方文本并复制。',
+            docsFailed: '无法加载文档文件，提示词改为给出文档链接。',
+            intro: '我在使用 fastGMA（{site}），一个基因组混合模型分析的命令行工具（GWAS、方差组分与遗传力估计、基因组预测）。',
+            docsInline: '上方 <fastgma-docs> 标签之间是它的完整文档，以及每个模式的 `fastgma -h <n>` 输出。',
+            docsLink: '请先阅读它的完整文档和每个模式的 `fastgma -h <n>` 输出：{url}',
+            rules: [
+                '请告诉我如何用 fastGMA 完成下面的分析：',
+                '1. 说明应使用哪个或哪些模块（例如 --make-grm、--uvlmm、--glmm）以及原因，一两句话即可。',
+                '2. 按运行顺序给出完整的 fastgma 命令（例如先构建 GRM）。',
+                '3. 只使用 `fastgma -h <n>` 输出中存在的选项，不要编造选项或取值；如果 fastGMA 无法完成该分析，请直接说明。',
+                '4. 如果没有给出文件名、列名或性状类型，请用 <geno_prefix> 这样清楚的占位符，并列出你的假设。',
+                '5. 简要解释关键选项，以及应查看哪些输出文件。',
+                '6. 请用中文回答；命令、选项名和文件名保持英文原样。'
+            ],
+            task: '我的分析需求：',
+            examples: {
+                gwas: '我有 PLINK 格式的基因型（前缀 geno）和表型文件 pheno.txt，列为 id、height、age、sex。想对 height 做 GWAS（校正 age 和 sex），并估计它的遗传力。',
+                binary: '我有一个病例-对照疾病性状（0/1）和 5000 个个体的 PLINK 基因型，想做考虑亲缘关系的 GWAS。',
+                dominance: '我想估计一个性状的加性和显性遗传方差，并逐个 SNP 检验显性效应。',
+                multi: '同一批个体测了三个相关的性状，有部分缺失值。想对这三个性状做联合 GWAS。',
+                longitudinal: '每只小鼠从第 1 周到第 16 周每周称一次体重，想找到效应随年龄变化的 SNP。',
+                gxe: '同一群体在 40 个环境中测定了表型，想估计遗传方差、GxE 方差以及各环境的残差方差。'
+            }
+        }
+    };
+
+    var lang = 'en';
+    var docsText = null;
+    var docsPromise = fetch(docsUrl)
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+        .then(function (t) { docsText = t; return t; })
+        .catch(function () { return null; });
+
+    function fill(template, values) {
+        return template.replace(/\{(\w+)\}/g, function (m, key) { return values[key]; });
+    }
+
+    function buildPrompt(withDocs) {
+        var t = text[lang];
+        var site = new URL('{{ "/" | relative_url }}', location.href).href;
+        var parts = [];
+        if (withDocs) {
+            parts.push('<fastgma-docs>\n' + docsText.trim() + '\n</fastgma-docs>', '');
+            parts.push(fill(t.intro, { site: site }) + ' ' + t.docsInline);
+        } else {
+            parts.push(fill(t.intro, { site: site }) + ' ' + fill(t.docsLink, { url: docsUrl }));
+        }
+        parts.push('', t.rules.join('\n'), '', t.task, question.value.trim());
+        return parts.join('\n');
+    }
+
+    function setLang(l) {
+        lang = l;
+        root.setAttribute('data-ui', l);
+        question.placeholder = text[l].placeholder;
+        root.querySelectorAll('[data-set-lang]').forEach(function (b) {
+            var on = b.getAttribute('data-set-lang') === l;
+            b.classList.toggle('active', on);
+            b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        status.textContent = '';
+        try { localStorage.setItem(storageKey, l); } catch (e) {}
+        updateLinks();
+    }
+
+    function updateLinks() {
+        var q = question.value.trim() ? encodeURIComponent(buildPrompt(false)) : '';
+        document.getElementById('ask-ai-claude').href = 'https://claude.ai/new' + (q ? '?q=' + q : '');
+        document.getElementById('ask-ai-chatgpt').href = 'https://chatgpt.com/' + (q ? '?q=' + q : '');
+    }
+
+    function fallbackCopy(value) {
+        output.value = value;
+        output.style.display = 'block';
+        output.focus();
+        output.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) {}
+        return ok;
+    }
+
+    function copy(value, done) {
+        output.style.display = 'none';
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(value).then(function () { done(true); }, function () { done(fallbackCopy(value)); });
+        } else {
+            done(fallbackCopy(value));
+        }
+    }
+
+    function requireQuestion(event) {
+        if (question.value.trim()) return true;
+        if (event) event.preventDefault();
+        status.textContent = text[lang].empty;
+        question.focus();
+        return false;
+    }
+
+    document.getElementById('ask-ai-copy').addEventListener('click', function () {
+        if (!requireQuestion()) return;
+        function run() {
+            var t = text[lang];
+            var withDocs = docsText !== null;
+            var value = buildPrompt(withDocs);
+            copy(value, function (ok) {
+                var msg = ok ? fill(t.copied, { k: Math.round(value.length / 4000) }) : t.copyFailed;
+                status.textContent = withDocs ? msg : t.docsFailed + ' ' + msg;
+            });
+        }
+        if (docsText !== null) {
+            run();
+        } else {
+            status.textContent = text[lang].loading;
+            docsPromise.then(run);
+        }
+    });
+
+    ['ask-ai-claude', 'ask-ai-chatgpt'].forEach(function (id) {
+        document.getElementById(id).addEventListener('click', requireQuestion);
+    });
+
+    question.addEventListener('input', function () { status.textContent = ''; updateLinks(); });
+
+    root.querySelectorAll('[data-set-lang]').forEach(function (b) {
+        b.addEventListener('click', function () { setLang(b.getAttribute('data-set-lang')); });
+    });
+
+    root.querySelectorAll('[data-example]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            question.value = text[lang].examples[b.getAttribute('data-example')];
+            status.textContent = '';
+            updateLinks();
+            question.focus();
+        });
+    });
+
+    var saved = null;
+    try { saved = localStorage.getItem(storageKey); } catch (e) {}
+    var browserZh = (navigator.languages || [navigator.language || '']).some(function (l) { return /^zh/i.test(l); });
+    setLang(saved === 'en' || saved === 'zh' ? saved : (browserZh ? 'zh' : 'en'));
+})();
+</script>
