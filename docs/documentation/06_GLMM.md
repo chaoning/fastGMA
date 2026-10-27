@@ -153,7 +153,7 @@ The log reports each PQL iteration and whether the null model converged. Two war
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--npart-snp` | `20` | Number of chunks the tested SNPs are read in (memory only; does not change results) |
+| `--npart-snp` | `20` | Minimum number of chunks the tested SNPs are read in; a chunk holds at most about 1,024 SNPs (memory only; does not change results) |
 | `--start-pos` | `0` | First SNP to test (0-based `.bim` index) |
 | `--end-pos` | `-1` | Stop before this SNP index; `-1` (or a value past the last SNP) means the end of the file |
 | `--maxiter0` | `100` | Max iterations, used for both the outer PQL loop and the inner AI-REML loop |

@@ -1,4 +1,4 @@
-Output of `fastgma -h <n>` for every mode. fastGMA bf68276 (built 2026-10-25, oneMKL 2025.0.2)
+Output of `fastgma -h <n>` for every mode. fastGMA e124b62 (built 2026-10-27, oneMKL 2025.0.2)
 
 ==> fastgma -h 1 <==
 
@@ -252,9 +252,8 @@ OPTIONS:
           --dom               Dominance test, statistical coding: joint additive + dominance
                               GLS per SNP
           --epis              Additive x additive epistasis test of SNP pairs (i, j > i) with
-                              SNP i in the tested range
-          --marginal          epis: fit both main effects and the interaction per SNP pair
-                              (slower, exact)
+                              SNP i in the tested range: approximate scan without main effects,
+                              full model with both main effects below --p-approx-cut
           --maf FLOAT [0.01]  Keep SNPs with minor-allele frequency min(p, 1-p) >= maf
           --missing-rate FLOAT [0.05]
                               Keep SNPs with missing rate <= cutoff
@@ -267,9 +266,9 @@ OPTIONS:
                               parts hold about equal numbers of pairs
           --p-cut FLOAT [1]   Write SNPs/pairs whose final p-value is <= p-cut (dominance:
                               p_add or p_dom); 1 = all
-          --p-approx-cut FLOAT [0.001]
-                              epis: re-test pairs exactly when the approximate p is below this;
-                              1 = exact test for every pair
+          --p-approx-cut FLOAT [1e-06]
+                              epis: refit pairs with both main effects when the approximate p
+                              is below this; 1 = full model for every pair
           --solver TEXT:{general,mme} [general]
                               Null-model algorithm: general (AI-REML on the dense n x n V) or
                               mme (AI-REML on the mixed model equations, whose size is the
@@ -281,8 +280,8 @@ OPTIONS:
 
 Advanced:
           --npart-snp INT [20]
-                              Read the tested SNPs in this many chunks (memory only;
-                              --add/--dom-*)
+                              Read the tested SNPs in at least this many chunks of at most
+                              about 1024 SNPs (memory only; --add/--dom)
           --start-pos INT [0]
                               First tested SNP (0-based index)
           --end-pos INT [-1]  End of the tested SNPs (0-based, exclusive; -1 = last SNP)
@@ -334,7 +333,8 @@ OPTIONS:
 
 Advanced:
           --npart-snp INT [20]
-                              Read the tested SNPs in this many chunks (memory only)
+                              Read the tested SNPs in at least this many chunks of at most
+                              about 1024 SNPs (memory only)
           --start-pos INT [0]
                               First tested SNP (0-based index)
           --end-pos INT [-1]  End of the tested SNPs (0-based, exclusive; -1 = last SNP)
