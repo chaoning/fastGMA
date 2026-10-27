@@ -2,7 +2,7 @@
 layout: page
 permalink: /documentation/08_LONGWAS/
 title: lonGWAS
-description: Longitudinal GWAS with random regression models
+description: Longitudinal data analysis with random regression models
 order: 8
 ---
 

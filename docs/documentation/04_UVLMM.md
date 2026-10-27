@@ -2,7 +2,7 @@
 layout: page
 permalink: /documentation/04_UVLMM/
 title: uvLMM
-description: Univariate linear mixed model GWAS
+description: Univariate linear mixed model for single trait
 order: 4
 ---
 

@@ -2,7 +2,7 @@
 layout: page
 permalink: /documentation/06_GLMM/
 title: GLMM
-description: Generalized linear mixed model GWAS for binary traits
+description: Generalized linear mixed model for binary traits
 order: 6
 ---
 

@@ -2,7 +2,7 @@
 layout: page
 permalink: /documentation/05_REMMA/
 title: REMMA
-description: Additive, dominance and epistasis GWAS with a multi-GRM random effect model
+description: Non-additive effects analysis with rapid linear mixed model
 order: 5
 ---
 

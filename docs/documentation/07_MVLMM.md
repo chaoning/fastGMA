@@ -2,7 +2,7 @@
 layout: page
 permalink: /documentation/07_MVLMM/
 title: mvLMM
-description: Multivariate linear mixed model GWAS for several correlated traits
+description: Multivariate linear mixed model for several correlated traits
 order: 7
 ---
 
@@ -36,7 +36,7 @@ Each trait uses its own non-missing records, so the traits do not need to be mea
 
 **SNP test.** For each SNP, the centered count of `a1` is added as a fixed effect with one coefficient per trait, and the covariance matrices are kept at their null-model values. The $$t$$ effects are tested jointly ("no effect on any trait") with a score/Wald statistic that follows a chi-square distribution with $$t$$ degrees of freedom.
 
-**Approximate test.** The exact test needs $$F = S'PS$$ (the $$t \times t$$ information matrix of the SNP effects) for every SNP. `MVLMM` approximates it by $$F \approx (x'x)\, \Gamma$$, where $$x$$ is the centered SNP and $$\Gamma$$ is the mean of $$F / x'x$$ over `--num-random-snp` random SNPs that pass the MAF and missing-rate filters. $$F$$ does not depend on the phenotypes, so no SNP is excluded from the calibration for being associated. The random SNPs are drawn from the whole genotype file with `--seed` (default `42`), so $$\Gamma$$ is the same in reruns and in every `--parallel` / `--snp-set` job. SNPs with approximate p below `--p-approx-cut` are re-tested exactly. `--p-approx-cut 1` gives the exact test for every SNP; `--p-approx-cut 0` keeps the approximate test only.
+**Approximate test.** The exact test needs $$F = S'PS$$ (the $$t \times t$$ information matrix of the SNP effects) for every SNP. `MVLMM` approximates it by $$F \approx S\, \Gamma\, S$$, where $$S = \operatorname{diag}(\sqrt{x_a'x_a})$$, $$x_a$$ is the centered SNP over the records of trait $$a$$ (the same $$x$$ for every trait with complete data, so that $$F \approx (x'x)\, \Gamma$$), and $$\Gamma$$ is the mean of $$S^{-1} F S^{-1}$$ over `--num-random-snp` random SNPs that pass the MAF and missing-rate filters. $$F$$ does not depend on the phenotypes, so no SNP is excluded from the calibration for being associated. The random SNPs are drawn from the whole genotype file with `--seed` (default `42`), so $$\Gamma$$ is the same in reruns and in every `--parallel` / `--snp-set` job. SNPs with approximate p below `--p-approx-cut` are re-tested exactly. `--p-approx-cut 1` gives the exact test for every SNP; `--p-approx-cut 0` keeps the approximate test only.
 
 > **Choosing `--p-approx-cut`.** The exact test is computed in batches and is cheap for samples below about 10,000 individuals: use `--p-approx-cut 1` there. The approximation works well in large samples of distantly related individuals and less well in small or structured samples. In the 1,062-individual mouse example, the approximate and exact `-log10 p` correlated at 0.94 and the only SNP with exact p < 1e-3 was not re-tested at the default cut (it was at `--p-approx-cut 0.01`). In a human sample of 427 individuals the correlation was 0.99996. If you use the approximate test on structured data, choose a larger cut such as `0.01`.
 
@@ -384,7 +384,7 @@ Repeat with part indices `2` through `10`, then concatenate `output/test_mvlmm.1
 
 ## 7. Run time and memory
 
-`--solver general` builds dense matrices with one row per record, $$N$$ rows in total (up to $$tn$$ for $$t$$ traits and $$n$$ individuals). It holds about two $$N \times N$$ matrices plus one per GRM (8 bytes per element), and each REML iteration costs $$O(N^3)$$. It is suited to data sets with up to a few tens of thousands of records. `--solver eigen` costs one $$O(n^3)$$ eigendecomposition and then $$O(n)$$ per REML iteration; the exact SNP test costs $$O(n^2)$$ per SNP for the rotation.
+`--solver general` builds dense matrices with one row per record, $$N$$ rows in total (up to $$tn$$ for $$t$$ traits and $$n$$ individuals). It holds about two $$N \times N$$ matrices plus the GRMs themselves (8 bytes per element), and each REML iteration costs $$O(N^3)$$. It is suited to data sets with up to a few tens of thousands of records. `--solver eigen` costs one $$O(n^3)$$ eigendecomposition and then $$O(n)$$ per REML iteration; the exact SNP test costs $$O(n^2)$$ per SNP for the rotation.
 
 Wall time with 4 threads on a shared node (exact test for every SNP unless noted):
 
