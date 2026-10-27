@@ -14,6 +14,8 @@ It is invoked through the top-level dispatcher with `--fast-reml`:
 fastgma --fast-reml [options]
 ```
 
+Run `fastgma -h 8` for the full option list.
+
 ## 1. What it does
 
 For one quantitative trait and $$q$$ interacting environments $$W$$ (an $$n \times q$$ matrix), `fastREML` fits
@@ -71,7 +73,7 @@ A whitespace- or tab-separated table with a header row. The first column must be
 | `--covar` | Continuous covariates (column names; ranges such as `pc1:pc10` are allowed) |
 | `--class` | Categorical covariates (one-hot coded) |
 | `--env-int` | Interacting environment columns (**required**; ranges allowed, e.g. `e1:e40`). These are also fitted as fixed main effects. They must not also be given in `--covar` or `--class`. |
-| `--missing-data` | Tokens treated as missing (default: `NA`, `NaN`, `nan`, `N/A`, …) |
+| `--missing-data` | Tokens treated as missing (default `NA NaN nan N/A ...`) |
 
 ### GRM (`--grm`)
 

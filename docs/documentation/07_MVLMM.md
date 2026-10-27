@@ -34,9 +34,9 @@ Each trait uses its own non-missing records, so the traits do not need to be mea
 
 **Null model.** All covariance matrices are estimated by REML with the average-information (AI) algorithm. When the AI step would leave the valid parameter space (a covariance matrix that is not positive definite), the update is chosen, by the REML log-likelihood, among an AI step blended with the EM step, the AI step shortened to 90% of the distance to the boundary, and an AI step in the Cholesky parameterisation. This lets the fit reach estimates on the boundary, such as a genetic correlation near ±1 or a variance near 0. If a covariance matrix ends close to singular, the log says so. Iteration stops when the parameter change is below `--cc-par0`, the gradient norm is below `--cc-gra0`, or the change in log-likelihood is below `--cc-logl0`, or after `--maxiter0` iterations.
 
-**SNP test.** For each SNP, the centered count of `a1` is added as a fixed effect with one coefficient per trait, and the covariance matrices are kept at their null-model values. The $$t$$ effects are tested jointly ("no effect on any trait") with a score/Wald statistic that follows a chi-square distribution with $$t$$ degrees of freedom.
+**SNP test.** For each SNP, the centred count of `a1` is added as a fixed effect with one coefficient per trait, and the covariance matrices are kept at their null-model values. The $$t$$ effects are tested jointly ("no effect on any trait") with a score/Wald statistic that follows a chi-square distribution with $$t$$ degrees of freedom.
 
-**Approximate test.** The exact test needs $$F = S'PS$$ (the $$t \times t$$ information matrix of the SNP effects) for every SNP. `MVLMM` approximates it by $$F \approx S\, \Gamma\, S$$, where $$S = \operatorname{diag}(\sqrt{x_a'x_a})$$, $$x_a$$ is the centered SNP over the records of trait $$a$$ (the same $$x$$ for every trait with complete data, so that $$F \approx (x'x)\, \Gamma$$), and $$\Gamma$$ is the mean of $$S^{-1} F S^{-1}$$ over `--num-random-snp` random SNPs that pass the MAF and missing-rate filters. $$F$$ does not depend on the phenotypes, so no SNP is excluded from the calibration for being associated. The random SNPs are drawn from the whole genotype file with `--seed` (default `42`), so $$\Gamma$$ is the same in reruns and in every `--parallel` / `--snp-set` job. SNPs with approximate p below `--p-approx-cut` are re-tested exactly. `--p-approx-cut 1` gives the exact test for every SNP; `--p-approx-cut 0` keeps the approximate test only.
+**Approximate test.** The exact test needs $$F = S'PS$$ (the $$t \times t$$ information matrix of the SNP effects) for every SNP. `MVLMM` approximates it by $$F \approx D\, \Gamma\, D$$, where $$D = \operatorname{diag}(\sqrt{x_a'x_a})$$, $$x_a$$ is the centred SNP over the records of trait $$a$$ (the same $$x$$ for every trait with complete data, so that $$F \approx (x'x)\, \Gamma$$), and $$\Gamma$$ is the mean of $$D^{-1} F D^{-1}$$ over `--num-random-snp` random SNPs that pass the MAF and missing-rate filters. $$F$$ does not depend on the phenotypes, so no SNP is excluded from the calibration for being associated. The random SNPs are drawn from the whole genotype file with `--seed` (default `42`), so $$\Gamma$$ is the same in reruns and in every `--parallel` / `--snp-set` job. SNPs with approximate p below `--p-approx-cut` are re-tested exactly. `--p-approx-cut 1` gives the exact test for every SNP; `--p-approx-cut 0` keeps the approximate test only.
 
 > **Choosing `--p-approx-cut`.** The exact test is computed in batches and is cheap for samples below about 10,000 individuals: use `--p-approx-cut 1` there. The approximation works well in large samples of distantly related individuals and less well in small or structured samples. In the 1,062-individual mouse example, the approximate and exact `-log10 p` correlated at 0.94 and the only SNP with exact p < 1e-3 was not re-tested at the default cut (it was at `--p-approx-cut 0.01`). In a human sample of 427 individuals the correlation was 0.99996. If you use the approximate test on structured data, choose a larger cut such as `0.01`.
 
@@ -77,7 +77,7 @@ Columns are selected by **header name**. A token that is not a header name but a
 | `--covar` | Continuous covariates. Give once for all traits, or once per trait in `--trait` order |
 | `--class` | Categorical covariates. Give once for all traits, or once per trait in `--trait` order |
 | `--random` | ID column of each random effect (see below). Default: the ID column for every GRM |
-| `--missing-data` | Tokens treated as missing (default `NA Na na NAN NaN nan -NAN -NaN -nan <NA> <na> N/A n/a`; giving the option replaces the list) |
+| `--missing-data` | Tokens treated as missing in the data file (default `NA NaN nan N/A ...`; giving the option replaces the list) |
 
 An intercept is always fitted for each trait. Per-trait covariates: `--trait y1 y2 --covar E1 E2 --covar E1` fits `E1` and `E2` for `y1` and `E1` for `y2`. `--covar E1` alone fits `E1` for both traits. `--covar` or `--class` given a number of times other than 1 or the number of traits is an error. Fixed-effect columns that are linearly dependent on earlier ones (for example one level of each class variable) are dropped and reported in the log.
 
@@ -109,14 +109,15 @@ GRMs are referenced by prefix and must be in GCTA format (`.grm.bin`, `.grm.id`)
 
 | Option | Meaning |
 | --- | --- |
-| `--bfile` | PLINK binary genotype prefix (`.bed/.bim/.fam`) (**required**). Every individual with records must be in the `.fam` file |
-| `--condition-snp` | SNP IDs fitted as fixed covariates (one effect per trait) in the null model and excluded from the scan |
+| `--bfile` | PLINK binary genotype prefix (`.bed/.bim/.fam`) |
+| `--ffile` | Feature-matrix prefix (`.fam/.bim/.fmat`). Each `.fmat` row is one feature and each column one sample, for imputed dosages, expression or any other continuous per-sample matrix |
+| `--missing-geno` | Tokens treated as missing in the `.fmat` file (default `NA NaN nan N/A ...`) |
 
-The SNP scan always runs; there is no variance-components-only mode.
+Give exactly one of `--bfile` and `--ffile`. Every individual with records must be in the `.fam` file. A `--ffile` feature is centred by its mean, missing values get the mean, `--maf` is not applied and `af` is the feature mean. The SNP scan always runs; there is no variance-components-only mode.
 
 ## 4. Outputs
 
-All files share the `--out` prefix and are tab-separated with a header row. Values that are not finite print as `nan`.
+All files share the `--out` prefix and are tab-separated with a header row. Values that are not finite print as `nan` (`NA` in `.sln`).
 
 | File | Contents |
 | --- | --- |
@@ -152,7 +153,7 @@ The blocks appear in the order `--mgrm` GRMs, `--grm`, non-genetic effects, `res
 
 ### `<out>.var_cov`
 
-The full sampling covariance matrix of the `.var` estimates, in the same order. The header row is `parameter` followed by one label per parameter, and each row starts with its label. Labels are `<component>_<row>_<col>`, for example `G_1_1`, `G_2_1`, `residual_2_2`. Values are written with 10 significant digits (the other files use 6).
+The full sampling covariance matrix of the `.var` estimates, in the same order. The header row is `parameter` followed by one label per parameter, and each row starts with its label. Labels are `<component>_<row>_<col>`, for example `G_1_1`, `G_2_1`, `residual_2_2`. Values are written with 10 significant digits, as in `.sln` (`.var`, `.h2`, `.rg` and `.assoc` use 6).
 
 ### `<out>.h2` and `<out>.rg`
 
@@ -182,7 +183,7 @@ y1	2	sex	2	0	NA
 | Column | Meaning |
 | --- | --- |
 | `trait` | Trait name |
-| `type` | `0` intercept, `1` covariate (also `--condition-snp` SNPs), `2` class level, `3` GRM random effect, `4` non-genetic random effect |
+| `type` | `0` intercept, `1` covariate, `2` class level, `3` GRM random effect, `4` non-genetic random effect |
 | `term` | Fixed effects: column name (or SNP ID). Random effects: the variance component as named in `<out>.var` |
 | `levels` | Class level, or individual ID / level for random effects (`1` for intercept and covariates) |
 | `effect`, `se` | Estimate and standard error (for random effects, the square root of the prediction error variance, PEV) |
@@ -207,7 +208,7 @@ chr	snp	pos	a1	a2	af	N	cc_par	cc_gra	beta_y1	se_y1	beta_y2	se_y2	cov_y2_y1	p_lrt
 | Column | Meaning |
 | --- | --- |
 | `chr`, `snp`, `pos`, `a1`, `a2` | Chromosome, SNP ID, position, effect allele and other allele from the `.bim` file |
-| `af` | Frequency of `a1` among the individuals with records |
+| `af` | Frequency of `a1` among the individuals with records (the feature mean with `--ffile`) |
 | `N` | Number of individuals with records and a non-missing genotype |
 | `cc_par`, `cc_gra` | `--refit` only: norm of the last parameter change and of the gradient of the per-SNP REML fit (`nan` for SNPs that were not refitted) |
 | `beta_<trait>`, `se_<trait>` | Effect of one copy of `a1` on the trait, and its standard error |
@@ -215,7 +216,7 @@ chr	snp	pos	a1	a2	af	N	cc_par	cc_gra	beta_y1	se_y1	beta_y2	se_y2	cov_y2_y1	p_lrt
 | `p_lrt` | `--refit` only: approximate likelihood-ratio p-value (chi-square, `t` df) |
 | `p` | Joint p-value (chi-square, `t` df) |
 
-For a SNP that was not re-tested exactly, `beta`, `se`, `cov` and `p` come from the approximate test. SNPs that fail `--maf` or `--missing-rate`, conditional SNPs, and SNPs whose test is singular (for example monomorphic among the records of one trait) have `nan` in the effect and p-value columns.
+For a SNP that was not re-tested exactly, `beta`, `se`, `cov` and `p` come from the approximate test. SNPs that fail `--maf` or `--missing-rate` and SNPs whose test is singular (for example monomorphic among the records of one trait) have `nan` in the effect and p-value columns.
 
 With `--p-cut` below `1`, only SNPs with a finite `p` at or below the cut are written. The default `1` writes every SNP, including the `nan` rows.
 
@@ -235,7 +236,7 @@ With `--p-cut` below `1`, only SNPs with a finite `p` at or below the cut are wr
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--maf` | `0.01` | Minimum minor allele frequency `min(af, 1 − af)` |
+| `--maf` | `0.01` | Minimum minor allele frequency `min(af, 1 − af)` (`--bfile` only) |
 | `--missing-rate` | `0.05` | Keep a SNP if its missing rate is at or below this |
 | `--p-approx-cut` | `1e-3` | SNPs with approximate p below this are re-tested exactly. `0` = approximate test only; `1` = exact test for every SNP |
 | `--refit` | off | `--solver eigen`: re-estimate the covariance matrices for every exactly tested SNP |
@@ -249,7 +250,7 @@ With `--p-cut` below `1`, only SNPs with a finite `p` at or below the cut are wr
 | `--parallel <m> <i>` | Split the SNPs into `m` equal parts and test part `i` (1-based). The output prefix becomes `<out>.<m>_<i>` |
 | `--start-pos` / `--end-pos` | 0-based index of the first SNP and one past the last SNP (`-1` = up to the last SNP). Advanced; output prefix unchanged |
 
-`--snp-set` and `--parallel` cannot be used together or with `--start-pos` / `--end-pos`. Every job fits the same null model and writes all output files (`.var`, `.var_cov`, `.h2`, `.rg`, `.sln`, `.assoc`) to its own prefix. The log is `<out>.<m>_<i>.log` for `--parallel`, `<out>.<start>_<end>.log` for `--snp-set` and `<out>.log` otherwise. Because `--seed` is fixed, all jobs use the same `Gamma`, and the merged `.assoc` files match a single full run.
+`--snp-set` and `--parallel` cannot be used together or with `--start-pos` / `--end-pos`. Every job fits the same null model and writes all output files (`.var`, `.var_cov`, `.h2`, `.rg`, `.sln`, `.assoc`) to its own prefix. The log is `<out>.<m>_<i>.log` for `--parallel`, `<out>.<start>_<end>.log` for `--snp-set` and `<out>.log` otherwise. Because `--seed` is fixed, all jobs use the same $$\Gamma$$, and the merged `.assoc` files match a single full run.
 
 ### Advanced (rarely needed)
 
@@ -259,7 +260,7 @@ Grouped under `Advanced` in `--help`.
 | --- | --- | --- |
 | `--num-random-snp` | `2000` | Random SNPs for the approximate-test calibration (capped at the number of SNPs) |
 | `--seed` | `42` | Random seed for drawing the calibration SNPs |
-| `--npart-snp` | `20` | SNP blocks read in turn (memory/IO chunking; does not affect results) |
+| `--npart-snp` | `20` | Minimum number of chunks the tested SNPs are read in; chunks are kept to about 128 MB of genotype codes (memory only; does not change results) |
 | `--cc-par0` / `--cc-gra0` | `1e-7` / `1e-6` | Null model: parameter-change / gradient-norm convergence criteria |
 | `--cc-logl0` | `5e-5` | Null model: log-likelihood-change convergence criterion |
 | `--maxiter` | `30` | `--refit` only: max iterations per SNP |
@@ -395,4 +396,4 @@ Wall time with 4 threads on a shared node (exact test for every SNP unless noted
 | Human, 2 traits (427 individuals, 256,868 SNPs) | 22.0 s | 12.3 s |
 | Human, as above, default `--p-approx-cut 1e-3` | 6.9 s | 5.4 s |
 
-For the univariate counterpart, see [UVLMM](../04_UVLMM/).
+For the univariate counterpart, see [uvLMM](../04_UVLMM/).

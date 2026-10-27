@@ -1,4 +1,4 @@
-Output of `fastgma -h <n>` for every mode. fastGMA e124b62 (built 2026-10-27, oneMKL 2025.0.2)
+Output of `fastgma -h <n>` for every mode. fastGMA cb4b6e2 (built 2026-10-27, oneMKL 2025.0.2)
 
 ==> fastgma -h 1 <==
 
@@ -131,15 +131,17 @@ OPTIONS:
           --make-epis         Calculate epistatic GRM
           --reformat          Reformat GRM
           --make-inv          Calculate the inverse of GRM
-          --out-close         Output pairs with GRM larger than cut value
+          --out-close         Drop individuals until no pair exceeds --cut-value; writes
+                              <out>.grm.pruned_iid
           --group             Group individuals by GRM relationships
           --grm TEXT          GRM prefix without the .grm suffix
           --out TEXT          Output prefix without the .grm suffix
           --prefix1 TEXT      First dense GRM prefix without the .grm suffix for --make-epis
           --prefix2 TEXT      Second dense GRM prefix without the .grm suffix for --make-epis
           --npart INT         Partition count (for merging)
-          --out-fmt INT       Output format: 0=matrix, 1=index_triplet, 2=iid_triplet, 3=binary
-          --cut-value FLOAT   Cutoff value for filtering
+          --out-fmt INT [2]   Output format: 0=matrix, 1=index_triplet, 2=iid_triplet, 3=binary
+          --cut-value FLOAT [0.05]
+                              Relatedness threshold for --out-close and --group
           --val FLOAT         Value added to the diagonal before --make-inv (default: 0.001)
           --num-pc INT        Number of leading PCs written by --pca (0 = all; default: 20)
           --sparse [0]        Indicate sparse GRM
@@ -216,8 +218,8 @@ Advanced:
           --cc-gra FLOAT [1e-06]
                               Convergence criterion for gradient
           --npart-snp INT [20]
-                              Partition SNPs into parts (memory/IO chunking; does not affect
-                              results)
+                              Minimum number of chunks the tested SNPs are read in; chunks are
+                              kept to about 128 MB (memory only)
           --num-random-snp INT [2000]
                               Random SNPs for approximate-test calibration (auto-capped to
                               #SNPs)
@@ -238,8 +240,14 @@ OPTIONS:
                               individual ID)
           --mgrm TEXT ... REQUIRED
                               GRM file prefix(es) of the null model; one or more
-          --bfile TEXT REQUIRED
-                              PLINK BED file prefix
+          --bfile TEXT        PLINK BED file prefix (give one of --bfile and --ffile)
+          --ffile TEXT        Prefix for feature-matrix files (.fam, .bim, .fmat): each .fmat
+                              row is one feature and each column one sample,
+                              whitespace-separated; centred by the feature mean, no MAF filter
+                              (--add, --epis)
+          --missing-geno TEXT ...
+                              Missing value tokens in the --ffile matrix (PLINK BED encodes
+                              missing calls itself)
           --out TEXT REQUIRED Output file prefix
           --trait TEXT REQUIRED
                               Trait column name (single trait)
@@ -280,8 +288,8 @@ OPTIONS:
 
 Advanced:
           --npart-snp INT [20]
-                              Read the tested SNPs in at least this many chunks of at most
-                              about 1024 SNPs (memory only; --add/--dom)
+                              Minimum number of chunks the tested SNPs are read in; chunks are
+                              kept to about 128 MB (memory only; --add/--dom)
           --start-pos INT [0]
                               First tested SNP (0-based index)
           --end-pos INT [-1]  End of the tested SNPs (0-based, exclusive; -1 = last SNP)
@@ -307,9 +315,15 @@ OPTIONS:
   -h,     --help              Print this help message and exit
           --data TEXT         Phenotype/covariate table (required; header line, first column =
                               individual ID)
-          --grm TEXT REQUIRED GRM file prefix
-          --bfile TEXT REQUIRED
-                              PLINK BED file prefix
+          --grm TEXT          GRM file prefix (one GRM; give --grm or --mgrm)
+          --mgrm TEXT ...     GRM file prefixes, one random effect each (give --grm or --mgrm)
+          --bfile TEXT        PLINK BED file prefix (give one of --bfile and --ffile)
+          --ffile TEXT        Prefix for feature-matrix files (.fam, .bim, .fmat): each .fmat
+                              row is one feature and each column one sample,
+                              whitespace-separated; centred by the feature mean, no MAF filter
+          --missing-geno TEXT ...
+                              Missing value tokens in the --ffile matrix (PLINK BED encodes
+                              missing calls itself)
           --out TEXT REQUIRED Output file prefix
           --trait TEXT REQUIRED
                               Binary (0/1) trait column name (single trait)
@@ -318,23 +332,21 @@ OPTIONS:
           --missing-data TEXT ...
                               Missing value tokens in the data file (default: NA NaN nan N/A
                               ...)
-          --dom               Statistical dominance coding: joint additive + dominance test per
-                              SNP (default)
           --maf FLOAT [0.01]  Keep SNPs with minor-allele frequency min(p, 1-p) >= maf
           --missing-rate FLOAT [0.05]
                               Keep SNPs with missing rate <= cutoff
-          --min-geno-count INT [0]
-                              Minimum number of individuals in each genotype class for the
-                              dominance test (0 = off)
           --snp-set TEXT x 2  Test SNPs from the first to the second SNP ID (inclusive)
           --parallel INT x 2  Split the SNPs into m parts and test part i (1-based): m i
-          --p-cut FLOAT [1]   Write SNPs whose p_add or p_dom is <= p-cut; 1 = all
+          --p-cut FLOAT [1]   Write SNPs whose p is <= p-cut; 1 = all
+          --spa-cut FLOAT [0.05]
+                              Saddlepoint approximation for SNPs whose normal-approximation p
+                              is below this (0 = off, 1 = every SNP)
           --threads INT [10]  Number of threads
 
 Advanced:
           --npart-snp INT [20]
-                              Read the tested SNPs in at least this many chunks of at most
-                              about 1024 SNPs (memory only)
+                              Minimum number of chunks the tested SNPs are read in; chunks are
+                              kept to about 128 MB (memory only)
           --start-pos INT [0]
                               First tested SNP (0-based index)
           --end-pos INT [-1]  End of the tested SNPs (0-based, exclusive; -1 = last SNP)
@@ -355,18 +367,19 @@ OPTIONS:
           --data TEXT         Data file (required; whitespace-separated, header row, first
                               column = individual ID)
           --grm TEXT          Additive GRM file prefix
-          --bfile TEXT REQUIRED
-                              PLINK BED file prefix
+          --bfile TEXT        PLINK BED file prefix (give one of --bfile and --ffile)
+          --ffile TEXT        Prefix for feature-matrix files (.fam, .bim, .fmat): each .fmat
+                              row is one feature and each column one sample,
+                              whitespace-separated (dosages, expression, ...); centred by the
+                              feature mean, no MAF filter
           --out TEXT REQUIRED Output file prefix
           --mgrm TEXT ...     Further GRM file prefixes (general solver; fitted before --grm)
           --missing-data TEXT ...
                               Missing value tokens in the data file (default: NA, NaN, nan,
                               N/A, ...)
           --missing-geno TEXT ...
-                              Missing genotype tokens (not used for PLINK .bed input)
-          --condition-snp TEXT ...
-                              SNP IDs fitted as fixed covariates (one effect per trait) and
-                              excluded from the scan
+                              Missing value tokens in the --ffile matrix (PLINK BED encodes
+                              missing calls itself)
           --trait TEXT ... REQUIRED
                               Trait column names (two or more traits; one is allowed)
           --covar TEXT ...    Covariate column names; repeat once per trait in --trait order,
@@ -404,7 +417,8 @@ Advanced:
                               #SNPs)
           --seed UINT [42]    Random seed for sampling the --num-random-snp SNPs
           --npart-snp INT [20]
-                              Number of SNP blocks read in turn (memory only)
+                              Minimum number of chunks the tested SNPs are read in; chunks are
+                              kept to about 128 MB (memory only)
           --start-pos INT [0]
                               0-based index of the first SNP to test
           --end-pos INT [-1]  0-based index one past the last SNP to test (-1 = all)
@@ -497,8 +511,8 @@ Advanced:
                               0-based index of the first SNP to test
           --end-pos INT [-1]  0-based index one past the last SNP to test (-1 = all)
           --npart-snp INT [20]
-                              Number of SNP chunks read in turn (memory only; does not change
-                              results)
+                              Minimum number of chunks the tested SNPs are read in; chunks are
+                              kept to about 128 MB (memory only)
           --num-random-snp INT [2000]
                               Random SNPs for the approximate-test calibration (capped at the
                               number of SNPs)

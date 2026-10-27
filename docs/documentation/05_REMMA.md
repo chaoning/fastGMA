@@ -6,7 +6,7 @@ description: Non-additive effects analysis with rapid linear mixed model
 order: 5
 ---
 
-`REMMA` (Random Effect Model for Multiple Associations) tests SNPs for additive, dominance and additive-by-additive epistatic effects. It first fits a **null model** with one or more GRMs as random effects (for example additive, dominance and epistatic GRMs). It then runs one per-SNP or per-SNP-pair test using the variance components from that null model.
+`REMMA` (Random Effect Model for Multiple Associations) tests SNPs for additive, dominance and additive-by-additive epistatic effects. It first fits a **null model** with one or more GRMs as random effects (for example additive, dominance and epistatic GRMs). It then runs one test, per SNP or per SNP pair, with the variance components of that null model.
 
 It is invoked through the top-level dispatcher with `--remma` (there is no short form):
 
@@ -32,9 +32,13 @@ V &= \textstyle\sum_k \sigma^2_k Z G_k Z' + \sigma^2_e I
 \end{aligned}
 $$
 
-$$Xb$$ holds the fixed effects (intercept, covariates, class variables). Each $$u_k$$ is a random effect with covariance matrix $$G_k$$, one per GRM given with `--mgrm`. $$Z$$ maps records to individuals, so repeated records per individual are allowed and are used by every test. The variance components are estimated once by AI-REML (WEMAI: the AI matrix is blended with the EM matrix when needed to keep the variances positive). The start values are scale-aware: the phenotypic variance is split evenly over the $$K$$ GRMs and the residual. `--solver general` (default) fits on the dense $$n \times n$$ $$V$$ of the $$n$$ records; `--solver mme` fits the same model on the mixed model equations, whose size $$p + Kq$$ ($$p$$ fixed effects, $$q$$ individuals) does not grow with the number of records. It is faster when this is smaller than the number of records, for example with more than about three records per individual for three GRMs (see [uvLMM](../04_UVLMM/), Section 2). Both give the same estimates and tests. `mme` adds `--val` (default `0.001`) to each GRM diagonal so that the GRM can be inverted; give `general` the same `--val` to fit the identical model. All tests below reuse $$V$$ from this fit, and the variances are not re-estimated for each SNP.
+$$Xb$$ holds the fixed effects (intercept, covariates, class variables). Each $$u_k$$ is a random effect with covariance matrix $$G_k$$, one per GRM given with `--mgrm`. $$Z$$ maps records to individuals, so repeated records per individual are allowed and are used by every test. The variance components are estimated once by AI-REML (WEMAI: the AI matrix is blended with the EM matrix when needed to keep the variances positive). The start values are scale-aware: the phenotypic variance is split evenly over the $$K$$ GRMs and the residual. 
 
-Let $$P = V^{-1} - V^{-1} X (X' V^{-1} X)^{-1} X' V^{-1}$$, $$S = Z'PZ$$ and $$s = Z'Py$$. Genotypes are coded per individual as the number of copies of the A1 allele (`0/1/2`). Missing genotypes are replaced by the SNP mean $$2p$$ for the additive code.
+`--solver general` (default) fits on the dense $$n \times n$$ $$V$$ of the $$n$$ records; `--solver mme` fits the same model on the mixed model equations, whose size $$p + Kq$$ ($$p$$ fixed effects, $$q$$ individuals) does not grow with the number of records. `mme` is faster when $$p + Kq$$ is smaller than the number of records, for example with more than about three records per individual for three GRMs (see [uvLMM](../04_UVLMM/), Section 2). Both give the same estimates and tests. `mme` adds `--val` (default `0.001`) to each GRM diagonal so that the GRM can be inverted; give `general` the same `--val` to fit the identical model.
+
+All tests below reuse $$V$$ from this fit, and the variances are not re-estimated for each SNP.
+
+Let $$P = V^{-1} - V^{-1} X (X' V^{-1} X)^{-1} X' V^{-1}$$, $$S = Z'PZ$$ and $$s = Z'Py$$. Genotypes are coded per individual as the number of copies of the A1 allele (`0/1/2`). Missing genotypes are replaced by the SNP mean $$2p$$ for the additive code. With `--ffile` the code is the feature value, centred by its mean (missing values get the mean).
 
 ## 2. Tests
 
@@ -48,7 +52,7 @@ Choose exactly one test. The run stops with an error if none or more than one is
 
 ### Additive test (`--add`)
 
-Let $$x$$ be the centered SNP code (the dosage minus $$2p$$). With $$V$$ fixed, the GLS estimate of the SNP effect and its standard error are
+Let $$x$$ be the centred SNP code (the dosage minus $$2p$$). With $$V$$ fixed, the GLS estimate of the SNP effect and its standard error are
 
 $$
 \hat\beta = \frac{x's}{x'Sx}, \qquad \operatorname{se}(\hat\beta) = \sqrt{\frac{1}{x'Sx}}, \qquad \frac{\hat\beta^2}{\operatorname{se}(\hat\beta)^2} \sim \chi^2_1
@@ -64,17 +68,17 @@ $$
 y = Xb + Z x_a a + Z x_d d + Z u_1 + \cdots + Z u_K + e
 $$
 
-by generalized least squares with the fixed $$V$$ from the null model. $$x_a$$ is the centered additive code $$x - 2p$$. $$x_d$$ is the statistical dominance code $$0 \to -2p^2$$, $$1 \to 2pq$$, $$2 \to -2q^2$$, the same as in the dominance GRM (`--grm-type dom`) (see [GRM](../03_GRM/)). Here $$p$$ is the A1 frequency and $$q = 1 - p$$. A missing genotype gets the mean dominance code of the observed genotypes, so it carries no information (like the mean-imputed additive code). Wald tests (chi-square, 1 df) are reported for both $$a$$ and $$d$$ from the same fit.
+by generalized least squares with the fixed $$V$$ from the null model. $$x_a$$ is the centred additive code $$x - 2p$$. $$x_d$$ is the statistical dominance code $$0 \to -2p^2$$, $$1 \to 2pq$$, $$2 \to -2q^2$$, the same as in the dominance GRM (`--grm-type dom`) (see [GRM](../03_GRM/)). Here $$p$$ is the A1 frequency and $$q = 1 - p$$. A missing genotype gets the mean dominance code of the observed genotypes, so it carries no information (like the mean-imputed additive code). Wald tests (chi-square, 1 df) are reported for both $$a$$ and $$d$$ from the same fit.
 
 With this coding, $$a$$ is the allele substitution effect, the quantity estimated by an ordinary additive GWAS, and $$d$$ is the dominance deviation. The genotypic additive effect (half the difference between the two homozygotes) is $$a - d(q - p)$$.
 
 **Non-identifiable SNPs.** If one of the three genotype classes is absent among the analysed individuals, or the two codes are collinear after adjusting for the fixed effects, the dominance effect cannot be estimated. `REMMA` then reports `beta_dom`, `se_dom` and `p_dom` as `nan`, and the `_add` columns hold the additive-only test (the same statistic as `--add`). The log counts these SNPs.
 
-**Small genotype classes (`--min-geno-count N`).** A dominance effect estimated from a very small genotype class (for example a few minor-allele homozygotes) can give an extreme `p_dom`. With `--min-geno-count N` (`N > 0`), the joint fit is only done when each genotype class `0`/`1`/`2` has at least `N` analysed individuals with a non-missing genotype; otherwise the SNP is treated exactly like a non-identifiable SNP (`_dom` columns `nan`, `_add` columns from the additive-only test). The default `0` turns the rule off (only an absent class triggers the fallback). The log reports the setting and how many tested SNPs it affected. The rule applies to `--dom` only: `--epis` uses additive codes and has no dominance term, so it ignores the option (with a warning).
+**Small genotype classes (`--min-geno-count N`).** A dominance effect estimated from a very small genotype class (for example a few minor-allele homozygotes) can give an extreme `p_dom`. With `--min-geno-count N` (`N > 0`), the joint fit is only done when each genotype class `0`/`1`/`2` has at least `N` analysed individuals with a non-missing genotype; otherwise the SNP is treated exactly like a non-identifiable SNP (`_dom` columns `nan`, `_add` columns from the additive-only test). The default `0` turns the rule off (only an absent class triggers the fallback). The log reports the setting and how many tested SNPs it affected. The rule applies to `--dom` only; `--add` and `--epis` ignore the option with a warning.
 
 ### Epistasis test (`--epis`)
 
-For a SNP pair $$i, j$$ the interaction code is $$z = x_i \circ x_j$$, the elementwise product of the two centered additive codes, centered again by its mean. The scan has two stages.
+For a SNP pair $$i, j$$ the interaction code is $$z = x_i \circ x_j$$, the elementwise product of the two centred additive codes, centred again by its mean. The scan has two stages.
 
 **Stage 1: approximate scan without main effects.** Every pair is tested with the interaction alone, $$y = Xb + Z z c + Z u_1 + \cdots + Z u_K + e$$:
 
@@ -84,7 +88,7 @@ $$
 
 Computing $$z'Sz$$ for every pair is slow, so `REMMA` approximates it by $$z'Sz \approx \gamma\, z'z$$:
 
-1. It draws `--num-random-snp` random SNP pairs from all SNPs in `--bfile`, with `--seed` (default `42`), and computes $$z'Sz / z'z$$ for each.
+1. It draws `--num-random-snp` random SNP pairs from all SNPs in the genotype file, with `--seed` (default `42`), and computes $$z'Sz / z'z$$ for each.
 2. $$\gamma$$ is the mean of this ratio over the pairs that pass the MAF and missing-rate filters and give a finite, positive ratio. The ratio does not depend on the phenotype, so no p-value filter is applied (as in `UVLMM` and `MVLMM`). At least 10% of the random pairs must be usable, or the run stops.
 
 With $$\gamma$$, $$z's$$ and $$z'z$$ of a block of pairs are matrix products of the SNP codes, so stage 1 costs about as much as reading the genotypes.
@@ -95,13 +99,17 @@ $$
 y = Xb + Z x_i a_i + Z x_j a_j + Z z c + Z u_1 + \cdots + Z u_K + e
 $$
 
-and the Wald test of $$c$$ is reported. If the two SNPs are in complete LD, so their main effects are collinear, the redundant main effect $$x_j$$ is dropped and $$[X, x_i, z]$$ is fitted. For SNPs that are not in LD, $$z$$ is nearly uncorrelated with $$x_i$$ and $$x_j$$, so the two stages give similar p-values and stage 1 is a good filter. With human genotypes (`example/human`, 427 individuals, three GRMs, the 5,137,150 pairs whose first SNP is one of the first 20), a cut $$c$$ passed every pair with full-model p below $$c/10$$ to stage 2; pairs just below $$c$$ can be missed when the two SNPs are in LD. With the default `1e-6`, 25 pairs were refitted, and all pairs with full-model p < 1e-7 were among them (19 of the 25 with p < 1e-6). Genome-wide significance for a scan of all pairs is far smaller (about 4e-13 for 500,000 SNPs). The cost of stage 2 grows with the cut: it refits about a fraction $$c$$ of all pairs, at $$O(q^2)$$ each for $$q$$ individuals, so `1e-3` refits 1.25e8 pairs for 500,000 SNPs. Raise the cut (for example `1e-4`) only when pairs with moderate p-values are of interest.
+and the Wald test of $$c$$ is reported. If the two SNPs are in complete LD, so their main effects are collinear, the redundant main effect $$x_j$$ is dropped and $$[X, x_i, z]$$ is fitted. For SNPs that are not in LD, $$z$$ is nearly uncorrelated with $$x_i$$ and $$x_j$$, so the two stages give similar p-values and stage 1 is a good filter.
+
+With human genotypes (`example/human`, 427 individuals, three GRMs, the 5,137,150 pairs whose first SNP is one of the first 20), every pair with full-model p below a tenth of the cut reached stage 2; pairs just below the cut can be missed when the two SNPs are in LD. With the default `1e-6`, 25 pairs were refitted. All 4 pairs with full-model p < 1e-7 were among them, and 19 of the 25 pairs with full-model p < 1e-6.
+
+Genome-wide significance for a scan of all pairs is far smaller (about 4e-13 for 500,000 SNPs). The cost of stage 2 grows with the cut: it refits about a fraction of all pairs equal to the cut, at $$O(q^2)$$ each for $$q$$ individuals, so `1e-3` refits 1.25e8 pairs for 500,000 SNPs. Raise the cut (for example `1e-4`) only when pairs with moderate p-values are of interest.
 
 `--p-approx-cut 1` fits the full model for every pair (no $$\gamma$$ is estimated; `--num-random-snp` and `--seed` are not used). This costs $$O(q^2)$$ per pair for $$q$$ individuals. `--p-approx-cut 0` keeps the stage 1 results only. `--marginal`, the old option for the full model, is accepted as `--p-approx-cut 1` with a warning.
 
 Because the random pairs come from the whole genotype file and the seed is fixed, every job of a split scan uses the same $$\gamma$$, and reruns give identical results.
 
-**Which pairs are tested.** A run (or a `--snp-set` / `--parallel` / `--start-pos`/`--end-pos` job) tests every pair $$(i, j)$$ with $$j > i$$ and SNP $$i$$ in the tested range; $$j$$ runs up to the last SNP in `--bfile`. Jobs that cover the SNPs once therefore test every pair exactly once. `--parallel m i` splits the SNPs so that each part holds about the same number of pairs (early parts hold fewer SNPs). The tested range is held in memory (about $$16qm$$ bytes for $$m$$ SNPs and $$q$$ individuals), and the later SNPs are read in blocks of the same size, but at least 1,024 SNPs.
+**Which pairs are tested.** A run (or a `--snp-set` / `--parallel` / `--start-pos`/`--end-pos` job) tests every pair $$(i, j)$$ with $$j > i$$ and SNP $$i$$ in the tested range; $$j$$ runs up to the last SNP of the genotype file. Jobs that cover the SNPs once therefore test every pair exactly once. `--parallel m i` splits the SNPs so that each part holds about the same number of pairs (early parts hold fewer SNPs). The tested range is held in memory (about $$16qm$$ bytes for $$m$$ SNPs and $$q$$ individuals), and the later SNPs are read in blocks of the same size, but at least 1,024 SNPs.
 
 ## 3. Inputs
 
@@ -129,7 +137,7 @@ All GRMs must list the same individuals in the same order. GRMs are referenced b
 
 | Random effect | How to build it |
 | --- | --- |
-| Additive | `fastgma --make-grm --grm-type add ` |
+| Additive | `fastgma --make-grm --grm-type add` |
 | Dominance | `fastgma --make-grm --grm-type dom` |
 | Additive × additive | `fastgma --process-grm --make-epis --prefix1 <add> --prefix2 <add>` |
 
@@ -139,9 +147,11 @@ See [GRM](../03_GRM/) for details. A single additive GRM is also allowed.
 
 | Option | Meaning |
 | --- | --- |
-| `--bfile` | PLINK binary genotype prefix (`.bed/.bim/.fam`) (**required**) |
+| `--bfile` | PLINK binary genotype prefix (`.bed/.bim/.fam`) |
+| `--ffile` | Feature-matrix prefix (`.fam/.bim/.fmat`). Each `.fmat` row is one feature and each column one sample, for imputed dosages, expression or any other continuous per-sample matrix |
+| `--missing-geno` | Tokens treated as missing in the `.fmat` file (default `NA NaN nan N/A ...`) |
 
-Only PLINK binary input is supported.
+Give exactly one of `--bfile` and `--ffile`. `--ffile` works with `--add` and `--epis`; `--dom` needs the genotype classes `0/1/2` and therefore `--bfile`. For a feature, `--maf` is not applied and `af` is the feature mean.
 
 ## 4. Outputs
 
@@ -166,7 +176,7 @@ $$
 h^2_k = \frac{\sigma^2_k d_k}{V_p}, \qquad V_p = \sum_k \sigma^2_k d_k + \sigma^2_e
 $$
 
-so GRMs of different scale (for example an $$A \circ A$$ epistatic GRM, whose mean diagonal can be far from 1) are comparable. This is the definition used by [fastREML](../09_FASTREML/) and [UVLMM](../04_UVLMM/). The $$d_k$$ are written to the log. SEs are from the delta method on the inverse AI matrix. `<out>.var` holds the unscaled variances, so $$\sigma^2_k / \sum \sigma^2$$ (the convention of GCTA `--reml`) can be computed from it.
+so GRMs of different scale (for example an $$A \circ A$$ epistatic GRM, whose mean diagonal can be far from 1) are comparable. This is the definition used by [fastREML](../09_FASTREML/) and [uvLMM](../04_UVLMM/). The $$d_k$$ are written to the log. SEs are from the delta method on the inverse AI matrix. `<out>.var` holds the unscaled variances, so $$\sigma^2_k / \sum \sigma^2$$ (the convention of GCTA `--reml`) can be computed from it.
 
 The example output below is from the mouse data (`example/mouse/geno/plink`, `example/mouse/pheno/pheno_simu.txt`, `--trait trait --covar e1 --class c1`) with the GRMs `add` (`--grm-type add`), `dom` (`--grm-type dom`) and `axa` ($$\text{add} \circ \text{add}$$):
 
@@ -212,7 +222,7 @@ chr snp pos a1 a2 af N beta se p
 chr snp pos a1 a2 af N beta_add se_add p_add beta_dom se_dom p_dom
 ```
 
-Columns: `chr`, `snp`, `pos`, `a1` and `a2` come from the `.bim` file; `af` is the A1 allele frequency in the analysed individuals and `N` the number of analysed individuals with a non-missing genotype. `beta`/`se`/`p` are the additive results. `beta_add`/`se_add`/`p_add` and `beta_dom`/`se_dom`/`p_dom` are the additive and dominance terms from the joint fit (see Section 2 for non-identifiable SNPs).
+Columns: `chr`, `snp`, `pos`, `a1` and `a2` come from the `.bim` file; `af` is the A1 allele frequency in the analysed individuals (the feature mean with `--ffile`) and `N` the number of analysed individuals with a non-missing genotype. `beta`/`se`/`p` are the additive results. `beta_add`/`se_add`/`p_add` and `beta_dom`/`se_dom`/`p_dom` are the additive and dominance terms from the joint fit (see Section 2 for non-identifiable SNPs).
 
 With the default `--p-cut 1`, every SNP in the tested range gets one row. SNPs that fail the MAF or missing-rate filter, or give a non-finite statistic, report `nan` for the effect, SE and p-value.
 
@@ -234,13 +244,14 @@ Only pairs in which both SNPs pass the filters are written. Pairs with stage 1 p
 | --- | --- | --- |
 | `--data` | — | Phenotype/covariate table (**required**) |
 | `--mgrm` | — | GRM prefix(es) of the null model (**required**) |
-| `--bfile` | — | PLINK binary prefix (**required**) |
+| `--bfile` / `--ffile` | — | PLINK binary prefix, or feature-matrix prefix (`--add`, `--epis`); exactly one is **required** |
+| `--missing-geno` | `NA NaN nan N/A ...` | Missing-value tokens in the `.fmat` file |
 | `--out` | — | Output prefix (**required**) |
 | `--trait` | — | Trait column, exactly one (**required**) |
 | `--covar`, `--class` | none | Covariate and class columns |
 | `--missing-data` | `NA NaN nan N/A ...` | Missing-value tokens in the data file |
 | `--add` / `--dom` / `--epis` | — | The test (exactly one) |
-| `--maf` | `0.01` | Keep SNPs with $$\min(p, 1 - p)$$ at or above this, in `[0, 0.5]` |
+| `--maf` | `0.01` | Keep SNPs with $$\min(p, 1 - p)$$ at or above this, in `[0, 0.5]` (`--bfile` only) |
 | `--missing-rate` | `0.05` | Keep SNPs with missing rate at or below this, in `[0, 1]` |
 | `--min-geno-count` | `0` | `--dom`: minimum number of individuals in each genotype class for the dominance test; otherwise `_dom` is `nan` and the additive-only test is reported (`0` = off) |
 | `--snp-set <first> <last>` | — | Test SNPs from the first to the last SNP ID (inclusive); with `--epis`, pairs whose first SNP is in this set |
@@ -257,7 +268,7 @@ Only pairs in which both SNPs pass the filters are written. Pairs with stage 1 p
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--npart-snp` | `20` | Minimum number of chunks the tested SNPs are read in by `--add` and `--dom`; a chunk holds at most about 1,024 SNPs (memory only; not used by `--epis`) |
+| `--npart-snp` | `20` | Minimum number of chunks the tested SNPs are read in; chunks are kept to about 128 MB of genotype codes (memory only; `--add` and `--dom`, not `--epis`) |
 | `--start-pos` | `0` | First tested SNP (0-based index in the `.bim` file) |
 | `--end-pos` | `-1` | End of the tested SNPs (0-based, exclusive). `-1`, or a value above the number of SNPs, means the last SNP |
 | `--num-random-snp` | `10000` | `--epis`: random SNP pairs for the $$\gamma$$ calibration; capped at the number of SNPs |

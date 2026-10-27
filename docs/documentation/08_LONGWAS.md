@@ -46,7 +46,7 @@ $$
 u \sim N(0, K_a \otimes G), \qquad \mathit{pe} \sim N(0, K_p \otimes I), \qquad e \sim N(0, \sigma^2_e I)
 $$
 
-where $$x_i$$ is the centered genotype of individual $$i$$, $$G$$ is the additive GRM, and $$f$$, $$a$$ and $$p$$ are the orders set by `--forder`, `--aorder` and `--porder`. $$K_a$$ and $$K_p$$ are the $$(a+1) \times (a+1)$$ and $$(p+1) \times (p+1)$$ covariance matrices of the genetic and permanent environmental coefficients, and $$\sigma^2_e$$ is one residual variance for all records. `--time-covar` and `--time-class` add further fixed curves to the mean curve, and $$c$$ holds the time-independent fixed effects of `--covar` and `--class`.
+where $$x_i$$ is the centred genotype of individual $$i$$, $$G$$ is the additive GRM, and $$f$$, $$a$$ and $$p$$ are the orders set by `--forder`, `--aorder` and `--porder`. $$K_a$$ and $$K_p$$ are the $$(a+1) \times (a+1)$$ and $$(p+1) \times (p+1)$$ covariance matrices of the genetic and permanent environmental coefficients, and $$\sigma^2_e$$ is one residual variance for all records. `--time-covar` and `--time-class` add further fixed curves to the mean curve, and $$c$$ holds the time-independent fixed effects of `--covar` and `--class`.
 
 The Legendre basis is
 
@@ -103,7 +103,7 @@ On the same balanced data both solvers give the same estimates and p-values. `ei
 
 The SNP scan uses the null-model variance components (unless `--refit` is given). For each SNP the $$f + 1$$ regression coefficients $$s_0, \ldots, s_f$$ are estimated jointly, and $$H_0\colon s_0 = \cdots = s_f = 0$$ is tested with a Wald chi-square test with $$f + 1$$ degrees of freedom, so a SNP that changes the level, the slope or the shape of the curve can be detected.
 
-The exact test needs $$F'PF$$ for the SNP design $$F$$; `LonGWAS` approximates it by $$\Gamma\, s's$$, where $$s$$ is the centered genotype and the $$(f+1) \times (f+1)$$ matrix $$\Gamma$$ is calibrated on `--num-random-snp` random SNPs (drawn with `--seed`, default `42`) that pass the filters and give a well-defined test. $$F'PF / s's$$ does not depend on the phenotype, so no p-value filter is applied (as in `UVLMM` and `MVLMM`). At least 10% of the random SNPs must qualify, or the run stops. SNPs with approximate p below `--p-approx-cut` are re-tested exactly; `--p-approx-cut 1` gives the exact test for every SNP. With `--solver eigen --refit`, each exactly tested SNP also gets its own REML fit of the variance components with the SNP in the model.
+The exact test needs $$F'PF$$ for the SNP design $$F$$; `LonGWAS` approximates it by $$\Gamma\, x'x$$, where $$x$$ is the centred genotype and the $$(f+1) \times (f+1)$$ matrix $$\Gamma$$ is calibrated on `--num-random-snp` random SNPs (drawn with `--seed`, default `42`) that pass the filters and give a well-defined test. $$F'PF / x'x$$ does not depend on the phenotype, so no p-value filter is applied (as in `UVLMM` and `MVLMM`). At least 10% of the random SNPs must qualify, or the run stops. SNPs with approximate p below `--p-approx-cut` are re-tested exactly; `--p-approx-cut 1` gives the exact test for every SNP. With `--solver eigen --refit`, each exactly tested SNP also gets its own REML fit of the variance components with the SNP in the model.
 
 ## 3. Model terms
 
@@ -180,7 +180,7 @@ Notes:
 | `--grm` | Prefix of the additive GRM (**required**) |
 | `--val` | Value added to the GRM diagonal to keep it positive definite (default `0.001`) |
 
-As elsewhere in `fastGMA`, the GRM is referenced by prefix (`--grm output/test` reads `output/test.grm.bin` and `output/test.grm.id`). Build it with `fastgma --make-grm`; GCTA GRMs are also accepted. See [GRM](../03_GRM/). `LonGWAS` adds `--val` (default `0.001`, the same option name as in `--make-grm`/`--process-grm`) to the diagonal of the GRM when it reads it, for both solvers. If the GRM is still not positive definite (for example duplicated or near-identical individuals), the run stops and suggests a larger `--val`.
+As elsewhere in `fastGMA`, the GRM is referenced by prefix (`--grm output/test` reads `output/test.grm.bin` and `output/test.grm.id`). Build it with `fastgma --make-grm`; GCTA GRMs are also accepted. See [GRM](../03_GRM/). `--val` is added to the GRM diagonal when the GRM is read, for both solvers. If the GRM is still not positive definite (for example duplicated or near-identical individuals), the run stops and suggests a larger `--val`.
 
 ### Genotype input (`--bfile` / `--ffile`)
 
@@ -188,7 +188,7 @@ As elsewhere in `fastGMA`, the GRM is referenced by prefix (`--grm output/test` 
 | --- | --- |
 | `--bfile` | PLINK binary genotype prefix (`.bed/.bim/.fam`). The SNP effect is estimated per copy of the `a1` allele (column 5 of the `.bim` file) |
 | `--ffile` | Feature-matrix prefix (`.fam/.bim/.fmat`). Each `.fmat` row is one feature and each column one sample, whitespace-separated, for example imputed dosages. Features are centred by their mean and tested like SNPs; the `--maf` filter does not apply, and `af` in `<out>.assoc` is the feature mean |
-| `--missing-geno` | Tokens treated as missing in the `.fmat` file (PLINK BED encodes missing calls itself) |
+| `--missing-geno` | Tokens treated as missing in the `.fmat` file (default `NA NaN nan N/A ...`; PLINK BED encodes missing calls itself) |
 
 Give at most one of `--bfile` and `--ffile`. Without either, only the null model is fitted and no `.assoc` is written.
 
@@ -205,11 +205,11 @@ All files share the `--out` prefix and are tab-separated with a header row.
 | `<out>.assoc` | One row per SNP with the association results (only with `--bfile` or `--ffile`) |
 | `<out>.log` | Log of the run (appended; see below for `--snp-set` / `--parallel`) |
 
-With `--snp-set` the output prefix becomes `<out>.<start>_<end>` (0-based start, exclusive end); with `--parallel m i` it becomes `<out>.<m>_<i>`. The suffix applies to every file of that job (`.var`, `.h2`, `.sln`, `.assoc` and `.log`).
+With `--snp-set` the output prefix becomes `<out>.<start>_<end>` (0-based start, exclusive end); with `--parallel m i` it becomes `<out>.<m>_<i>`. The suffix applies to every file of that job (`.var`, `.h2`, `.h2cum`, `.sln`, `.assoc` and `.log`).
 
 ### `<out>.var`
 
-The lower triangle of $$K_a$$ (`G`), then the lower triangle of $$K_p$$ (`permanent`), then the residual variance. `row` and `col` are 1-based indices of the Legendre coefficients (`1` = $$\phi_0$$, `2` = $$\phi_1$$, ...). Rows with `row = col` are variances; the others are covariances. Standard errors come from the AI matrix; values that are not finite print as `NA`. With the default orders, from the [standard scan](#standard-scan) example:
+The lower triangle of $$K_a$$ (`G`), then the lower triangle of $$K_p$$ (`permanent`), then the residual variance. `row` and `col` are 1-based indices of the Legendre coefficients (`1` = $$\phi_0$$, `2` = $$\phi_1$$, ...). Rows with `row = col` are variances; the others are covariances. Standard errors come from the inverse AI matrix; values that are not finite print as `NA`. With the default orders, from the [standard scan](#standard-scan) example:
 
 ```
 component	row	col	variance	se
@@ -350,7 +350,7 @@ The orders must be `0` or larger (see [Choosing the orders](#choosing-the-orders
 | --- | --- | --- |
 | `--start-pos` | `0` | 0-based index of the first SNP to test |
 | `--end-pos` | `-1` | 0-based index one past the last SNP to test; `-1` (or a value beyond the last SNP) tests to the end |
-| `--npart-snp` | `20` | Number of chunks the SNP range is read in (memory/IO; does not change results) |
+| `--npart-snp` | `20` | Minimum number of chunks the tested SNPs are read in; chunks are kept to about 128 MB of genotype codes (memory only; does not change results) |
 | `--num-random-snp` | `2000` | Random SNPs for the approximate-test calibration; capped at the number of SNPs |
 | `--use-vmat` | off | `--solver general`: build the full phenotypic covariance matrix `V` (records × records) for the test instead of using the mixed-model equations. Needs much more memory |
 | `--cc-par0` | `1e-7` | Null model: convergence when the norm of the parameter change is below this |
@@ -422,7 +422,7 @@ fastgma --longwas --solver eigen \
   --out output/mouse_longwas_eigen
 ```
 
-The wide file holds the same data as `phe.balance.txt`, and the [standard scan](#standard-scan) with `--data example/mouse_long/phe.balance.txt` gives the same variance components and p-values with `--solver general`, in 15.9 s and 585 MB instead of 2.8 s and 124 MB. Add `--refit` to re-estimate the variance components for the exactly tested SNPs.
+The wide file holds the same data as `phe.balance.txt`, and the [standard scan](#standard-scan) with `--data example/mouse_long/phe.balance.txt` gives the same variance components and p-values with `--solver general` (Section 2 compares time and memory). Add `--refit` to re-estimate the variance components for the exactly tested SNPs.
 
 A missing value in a time column stops the run and names the first one, for example:
 

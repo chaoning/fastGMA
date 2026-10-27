@@ -58,9 +58,9 @@ With `--ffile`:
 
 - `<prefix>.fmat` has one row per feature and one whitespace-separated column per sample, in `.fam` order. It has no header and no row names.
 - `<prefix>.bim` needs one line per feature; only the line count is used.
-- Each feature is centered by its mean over the observed values. With the default `--alpha -1` (`--code-type 2`) it is also scaled by its standard deviation, so the GRM does not depend on the units of the features. Negative values are fine.
+- Each feature is centred by its mean over the observed values. With the default `--alpha -1` (`--code-type 2`) it is also scaled by its standard deviation, so the GRM does not depend on the units of the features. Negative values are fine.
 - `--code-type 1` and `--alpha` use the observed variance of feature $$i$$ as $$v_i$$ in place of $$2p_i q_i$$. Multiplying one feature by a constant $$c$$ multiplies its contribution to the GRM by $$c^{2(1+\alpha)}$$, so only $$\alpha = -1$$ is independent of the units. Use other values only when all features are on a common scale (for example log-expression from one assay). $$\alpha$$ then sets how strongly features with a large variance dominate the GRM; unlike for SNPs, it has no population-genetic interpretation. With complete data the mean diagonal is exactly 1 for every $$\alpha$$.
-- Missing values are written as any of the `--missing-geno` tokens (default `NA`, `NaN`, `N/A` and similar).
+- Missing values are written as any of the `--missing-geno` tokens (default `NA NaN nan N/A ...`).
 - `--maf` does not apply, and only `--grm-type add` is supported.
 
 ### Selecting individuals and SNPs
@@ -87,7 +87,7 @@ CHR	SNP	A1	A2	FREQ	NOBS
 0	rs1155740	T	C	0.27383863	409
 ```
 
-`FREQ` is the frequency of the allele in the `A1` column. If that allele is the `.bim` A2, the frequency is converted to `1 − FREQ`. SNPs that are absent from the file, or whose `A1` matches neither `.bim` allele, are excluded and counted in the log. The frequencies are used for centering, scaling and the `--maf` filter; the missing-rate filter still uses the analysed individuals. With the same frequencies, the GRM is identical to GCTA `--update-freq`.
+`FREQ` is the frequency of the allele in the `A1` column. If that allele is the `.bim` A2, the frequency is converted to `1 − FREQ`. SNPs that are absent from the file, or whose `A1` matches neither `.bim` allele, are excluded and counted in the log. The frequencies are used for centring, scaling and the `--maf` filter; the missing-rate filter still uses the analysed individuals. With the same frequencies, the GRM is identical to GCTA `--update-freq`.
 
 `--write-freq` writes `<out>.freq` with one line per selected SNP: the A1 frequency used (estimated or read) and `NOBS`, the number of individuals with an observed genotype. With `--npart`, only part 1 writes the file. Both options require `--bfile`.
 
@@ -121,8 +121,8 @@ Missing genotypes are handled as in GCTA. A missing call contributes nothing to 
 | `--write-freq` | off | Write `<out>.freq` (BED input) |
 | `--val` | `0` | Value added to the diagonal of the output |
 | `--npart <n> <i>` | `1 1` | Compute only part `i` of `n` of the lower triangle (see below) |
-| `--npart-snp` | `20` | Number of SNP chunks read from disk in turn; raise it to lower memory use |
-| `--missing-geno` | `NA NaN N/A ...` | Tokens treated as missing in `--ffile` input |
+| `--npart-snp` | `20` | Number of chunks the SNPs are read in (exactly this many, unlike the association modules); raise it to lower memory use |
+| `--missing-geno` | `NA NaN nan N/A ...` | Tokens treated as missing in `--ffile` input |
 | `--threads` | `10` | Number of threads |
 
 The full genotype matrix is never held in memory: the SNPs are read in `--npart-snp` chunks. Memory is dominated by the GRM block (about $$8n^2$$ bytes for $$n$$ individuals) plus one chunk (about $$8nm/S$$ bytes for $$m$$ SNPs and $$S$$ = `--npart-snp` chunks), so raise `--npart-snp` when $$m$$ is large. For very large samples, split the lower triangle into row blocks with `--npart` and merge them afterwards:
@@ -205,11 +205,11 @@ Output formats for `--out-fmt`:
 
 Notes:
 
-- **`--merge`.** The blocks are read from `<grm>.<n>_<i>.grm.*` for `i = 1..n` and the merged GRM is written to `<grm>.grm.*`. `.grm.N.bin` is merged when the blocks have it. `--out` is not used, so the log goes to the console only unless `--out` is given.
+- **`--merge`.** The blocks are read from `<grm>.<n>_<i>.grm.*` for `i = 1..n` and the merged GRM is written to `<grm>.grm.*`. `.grm.N.bin` is merged when the blocks have it. `--out` only names the log file (without it, the log goes to the console only).
 - **`--pca`.** The files follow the GCTA layout. `<out>.eigenval` has one eigenvalue per line, largest first. `<out>.eigenvec` has one line per sample in `.grm.id` order with the columns `FID IID PC1 PC2 ...` (tab-separated, no header line). With a one-column `.grm.id`, the IID is written in both ID columns. `--num-pc 20` (default) computes only the 20 leading eigenpairs, which is faster than a full decomposition; `--num-pc 0` writes all of them.
 - **`--make-epis`.** The two GRMs must have the same `.grm.id` order. The output is float32 `<out>.grm.bin` plus `<out>.grm.id`; `.grm.N` is the concatenation of the two input `.grm.N` files when both exist. No `.grm.N.bin` is written.
 - **`--group`.** The output goes next to the input GRM, not to `--out`. Besides the group tables, it writes a sparse GRM (`.grm.sp.bin`) that keeps only within-group pairs.
-- **`--make-inv`.** The inverse is computed with a LAPACK Cholesky factorization (`dpotrf`, `dpotri`). A GRM centered by sample allele frequencies has rank at most $$n - 1$$, so it cannot be inverted without a diagonal value. That is why `--val` defaults to `0.001` here, while `--make-grm` itself adds nothing. With missing genotypes the GRM can have slightly negative eigenvalues (Section 1). If the matrix is not positive definite, `--make-inv` stops, reports the smallest eigenvalue and asks to rerun with `--val` above a given value. With `--out-fmt 3` the inverse is stored as float32, like every `.grm.bin`.
+- **`--make-inv`.** The inverse is computed with a LAPACK Cholesky factorization (`dpotrf`, `dpotri`). A GRM centred by sample allele frequencies has rank at most $$n - 1$$, so it cannot be inverted without a diagonal value. That is why `--val` defaults to `0.001` here, while `--make-grm` itself adds nothing. With missing genotypes the GRM can have slightly negative eigenvalues (Section 1). If the matrix is not positive definite, `--make-inv` stops, reports the smallest eigenvalue and asks to rerun with `--val` above a given value. With `--out-fmt 3` the inverse is stored as float32, like every `.grm.bin`.
 
 ## 4. Compatibility with GCTA
 
@@ -246,7 +246,7 @@ To reproduce a GCTA GRM exactly, use `--maf 0` (or the same `--maf` in both tool
 
 ## 5. Examples
 
-### Additive GRM for UVLMM
+### Additive GRM for uvLMM
 
 ```bash
 fastgma --make-grm --bfile test --out output/test

@@ -47,9 +47,9 @@ The three solvers:
 | `mme` | AI-REML on Henderson's mixed model equations (WEMAI as for `general`). The equations have one row per fixed effect and per random-effect level, so their size does not grow with the number of records; each GRM is inverted once. | Allows repeated records and `--random`. Needs positive-definite GRMs (see `--val` below). Same estimates and tests as `general`. Exact re-tests use the null variances. |
 | `general` | Dense AI-REML on the $$n \times n$$ covariance matrix (WEMAI: the AI matrix is blended with the EM matrix when needed to keep variances positive). | Allows repeated records and `--random`. Exact re-tests use the null variances. |
 
-**`mme` or `general`.** Both fit the same model; they differ in cost. Each `general` iteration factorizes the $$n \times n$$ covariance matrix of the $$n$$ records, while `mme` works with a matrix of size $$p + \sum_k q_k$$ ($$p$$ fixed effects, $$q_k$$ levels of random effect $$k$$). With many records per individual, as for repeated measures, `mme` is much faster and needs far less memory: on `example/mouse_long` (19,392 records of 1,212 mice, `--model repeat`, 8 threads) the null model and the scan of 11,833 SNPs take about 4 s and 0.2 GB in total. With one record per individual and one GRM, `eigen` is the fastest. Each iteration costs about the cube of the matrix size in both, so `mme` is faster when $$p + \sum_k q_k$$ is smaller than the number of records. With several GRMs each adds a block of all individuals: with three GRMs and two records per individual, `mme` is slower than `general`. When `--solver general` is used and the mixed model equations are smaller than the number of records, the log suggests `--solver mme`.
+**`mme` or `general`.** Both fit the same model; they differ in cost. Each `general` iteration factorizes the $$n \times n$$ covariance matrix of the $$n$$ records, while `mme` works with a matrix of size $$p + \sum_k q_k$$ ($$p$$ fixed effects, $$q_k$$ levels of random effect $$k$$). With many records per individual, as for repeated measures, `mme` is much faster and needs far less memory: on `example/mouse_long` (19,392 records of 1,212 mice, `--model repeat`, 8 threads) the null model and the scan of 11,833 SNPs take about 4 s and 0.2 GB in total. Each iteration costs about the cube of the matrix size in both, so `mme` is faster when $$p + \sum_k q_k$$ is smaller than the number of records. Each GRM adds a block for all individuals, so with three GRMs and two records per individual `mme` is slower than `general`. With one record per individual and one GRM, `eigen` is the fastest. When `--solver general` is used and the mixed model equations are smaller than the number of records, the log suggests `--solver mme`.
 
-**GRM diagonal (`--val`).** `mme` needs the inverse of each GRM, and a centered GRM is singular (its rows sum to zero). `mme` therefore adds `--val` (default `0.001`) to the GRM diagonal when it reads the GRM, as `--longwas` does. The other solvers add nothing unless `--val` is given. To compare `mme` with `general` on the same model, give both the same `--val`. If a GRM is still not positive definite (for example, duplicated individuals), the run stops and suggests a larger `--val`.
+**GRM diagonal (`--val`).** `mme` needs the inverse of each GRM, and a centred GRM is singular (its rows sum to zero). `mme` therefore adds `--val` (default `0.001`) to the GRM diagonal when it reads the GRM, as `--longwas` does. The other solvers add nothing unless `--val` is given. To compare `mme` with `general` on the same model, give both the same `--val`. If a GRM is still not positive definite (for example, duplicated individuals), the run stops and suggests a larger `--val`.
 
 Rules checked at start-up:
 
@@ -93,9 +93,9 @@ All `--mgrm` GRMs must list the same individuals in the same order. As elsewhere
 | --- | --- |
 | `--bfile` | PLINK binary genotype prefix (`.bed/.bim/.fam`) |
 | `--ffile` | Feature-matrix prefix (`.fam/.bim/.fmat`). Each `.fmat` row is one feature and each column one sample — suitable for imputed dosages, expression, or any continuous per-sample matrix. |
-| `--missing-geno` | Tokens treated as missing in the `.fmat` file |
+| `--missing-geno` | Tokens treated as missing in the `.fmat` file (default `NA NaN nan N/A ...`) |
 
-Give only one of `--bfile` / `--ffile`. If no genotype file is supplied, the command fits the null model, writes `.var`, `.h2` and `.sln`, and stops before the SNP scan.
+Give only one of `--bfile` / `--ffile`. A `--ffile` feature is centred by its mean, missing values get the mean, `--maf` is not applied and `af` is the feature mean. If no genotype file is supplied, the command fits the null model, writes `.var`, `.h2` and `.sln`, and stops before the SNP scan.
 
 ## 4. Outputs
 
@@ -123,7 +123,7 @@ residual	2.39709	0.105419
 ```
 
 `<out>.h2` adds a trailing `total` row holding the combined proportion of the
-**GRM-backed** components — the number usually quoted as the heritability. A
+GRM components — the number usually quoted as the heritability. A
 `permanent` or `--random` effect contributes variance but is not counted here:
 
 ```
@@ -233,7 +233,7 @@ Columns: chromosome `chr`, SNP ID `snp`, position `pos`, effect allele `a1` and 
 | `--snp-set <first> <last>` | Test only the SNPs from the first to the last SNP ID (inclusive). The output prefix becomes `<out>.<start>_<end>` (0-based start, exclusive end), for example `<out>.<start>_<end>.assoc` and the log `<out>.<start>_<end>.log`. |
 | `--parallel <m> <i>` | Split the SNPs into `m` equal parts and test part `i` (1-based). The output prefix becomes `<out>.<m>_<i>`, for example `<out>.<m>_<i>.assoc` and the log `<out>.<m>_<i>.log`. |
 
-`--snp-set` and `--parallel` cannot be used together. Each job fits the same null model and writes all its files (`.var`, `.h2`, `.sln`, `.assoc`, `.log`) to its own prefix. Because `--seed` is fixed, all jobs use the same `gamma`, and the merged `.assoc` files match a single full run.
+`--snp-set` and `--parallel` cannot be used together; `--start-pos` / `--end-pos` apply only without them. Each job fits the same null model and writes all its files (`.var`, `.h2`, `.sln`, `.assoc`, `.log`) to its own prefix. Because `--seed` is fixed, all jobs use the same $$\gamma$$, and the merged `.assoc` files match a single full run.
 
 ### Advanced (rarely needed)
 
@@ -244,7 +244,8 @@ Grouped under `Advanced` in `--help`; defaults are almost always fine.
 | `--cc-par0` / `--cc-gra0` | `1e-7` / `1e-6` | Null-model parameter / gradient convergence criteria |
 | `--cc-logl0` | `5e-5` | Null-model convergence criterion for the change in log-likelihood |
 | `--cc-par` / `--cc-gra` | `1e-7` / `1e-6` | Per-SNP refit parameter / gradient convergence criteria |
-| `--npart-snp` | `20` | SNP blocks per pass (memory/IO chunking; does not affect results) |
+| `--start-pos` / `--end-pos` | `0` / `-1` | 0-based index of the first SNP and one past the last SNP to test (`-1` = up to the last SNP); output prefix unchanged |
+| `--npart-snp` | `20` | Minimum number of chunks the tested SNPs are read in; chunks are kept to about 128 MB of genotype codes (memory only; does not change results) |
 | `--num-random-snp` | `2000` | Random SNPs for the approximate-test calibration (capped at the number of SNPs) |
 | `--seed` | `42` | Random seed for drawing the calibration SNPs |
 
