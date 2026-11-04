@@ -353,11 +353,11 @@ The orders must be `0` or larger (see [Choosing the orders](#choosing-the-orders
 | `--npart-snp` | `20` | Minimum number of chunks the tested SNPs are read in; chunks are kept to about 128 MB of genotype codes (memory only; does not change results) |
 | `--num-random-snp` | `2000` | Random SNPs for the approximate-test calibration; capped at the number of SNPs |
 | `--use-vmat` | off | `--solver general`: build the full phenotypic covariance matrix `V` (records × records) for the test instead of using the mixed-model equations. Needs much more memory |
-| `--cc-par0` | `1e-7` | Null model: convergence when the norm of the parameter change is below this |
-| `--cc-gra0` | `1e-6` | Null model: convergence when the norm of the gradient is below this |
+| `--cc-par0` | `1e-7` | Null model: convergence when the norm of the parameter change / var(y) is below this |
+| `--cc-gra0` | `1e-6` | Null model: convergence when the norm of the gradient * var(y) is below this |
 | `--cc-logl0` | `5e-5` | Null model: convergence when the change in log-likelihood is below this |
 | `--maxiter` | `30` | Per-SNP refit (`--solver eigen --refit`): max iterations |
-| `--cc-par` / `--cc-gra` / `--cc-logl` | `1e-7` / `1e-6` / `5e-5` | Per-SNP refit convergence criteria |
+| `--cc-par` / `--cc-gra` / `--cc-logl` | `1e-7` / `1e-6` / `5e-5` | Per-SNP refit convergence criteria, on the same scale |
 
 Set the environment variable `FASTGMA_LOG_LEVEL=debug` to log per-chunk progress.
 
@@ -446,7 +446,7 @@ fastgma --longwas \
   --out output/mouse_longwas_linear
 ```
 
-`--time-class Sex` gives each sex its own fixed linear curve, and the SNP test has 2 degrees of freedom. The fit converges slowly: it needs 313 iterations here, so `--maxiter0` is raised from the default `100`. Stopping at 100 iterations gives a warning, but the variance components are then already within 0.3% of the converged values.
+`--time-class Sex` gives each sex its own fixed linear curve, and the SNP test has 2 degrees of freedom. The fit converges slowly: it needs 298 iterations here, so `--maxiter0` is raised from the default `100`. Stopping at 100 iterations gives a warning, but the variance components are then already within 0.3% of the converged values.
 
 ### Cumulative heritability
 

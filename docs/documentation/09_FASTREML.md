@@ -121,7 +121,7 @@ total	nan	nan	nan	nan	0.426162	0.0607458
 | --- | --- | --- |
 | `--maxiter0` | 20 | Maximum REML iterations |
 | `--cc-par0` | 1e-4 | Stop when the relative parameter change is below this |
-| `--cc-gra0` | 1e-2 | … or the score norm is below this |
+| `--cc-gra0` | 1e-2 | … or the score norm times var(y) is below this |
 | `--cc-logl0` | 1e-2 | … or the change in `-2logL` is below this |
 
 ### Computation

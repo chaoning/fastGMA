@@ -1,4 +1,4 @@
-Output of `fastgma -h <n>` for every mode. fastGMA 969c256 (built 2026-11-04, oneMKL 2025.0.2)
+Output of `fastgma -h <n>` for every mode. fastGMA 27c5b10 (built 2026-11-05, oneMKL 2025.0.2)
 
 ==> fastgma -h 1 <==
 
@@ -208,15 +208,15 @@ OPTIONS:
 
 Advanced:
           --cc-par0 FLOAT [1e-07]
-                              Convergence criterion for parameters (null)
+                              Null-model convergence: parameter change / var(y)
           --cc-gra0 FLOAT [1e-06]
-                              Convergence criterion for gradient (null)
+                              Null-model convergence: gradient * var(y)
           --cc-logl0 FLOAT [5e-05]
                               Convergence criterion for the change in log-likelihood (null)
           --cc-par FLOAT [1e-07]
-                              Convergence criterion for parameters
+                              Per-SNP refit convergence: parameter change / var(y)
           --cc-gra FLOAT [1e-06]
-                              Convergence criterion for gradient
+                              Per-SNP refit convergence: gradient * var(y)
           --npart-snp INT [20]
                               Minimum number of chunks the tested SNPs are read in; chunks are
                               kept to about 128 MB (memory only)
@@ -300,9 +300,9 @@ Advanced:
           --maxiter0 INT [100]
                               Max iterations for the null model
           --cc-par0 FLOAT [1e-07]
-                              Null-model convergence: norm of the parameter change
+                              Null-model convergence: parameter change / var(y)
           --cc-gra0 FLOAT [1e-06]
-                              Null-model convergence: norm of the gradient
+                              Null-model convergence: gradient * var(y)
           --cc-logl0 FLOAT [5e-05]
                               Null-model convergence: change in REML log-likelihood
 
@@ -427,16 +427,17 @@ Advanced:
           --maxiter0 INT [100]
                               Max iterations for the null model
           --cc-par0 FLOAT [1e-07]
-                              Null model: convergence criterion for the parameter change
+                              Null model: convergence criterion for the parameter change /
+                              var(y)
           --cc-gra0 FLOAT [1e-06]
-                              Null model: convergence criterion for the gradient norm
+                              Null model: convergence criterion for the gradient * var(y)
           --cc-logl0 FLOAT [5e-05]
                               Null model: convergence criterion for the logL change
           --maxiter INT [30]  --refit: max iterations per SNP
           --cc-par FLOAT [1e-07]
-                              --refit: convergence criterion for the parameter change
+                              --refit: convergence criterion for the parameter change / var(y)
           --cc-gra FLOAT [1e-06]
-                              --refit: convergence criterion for the gradient norm
+                              --refit: convergence criterion for the gradient * var(y)
           --cc-logl FLOAT [5e-05]
                               --refit: convergence criterion for the logL change
 
@@ -520,11 +521,11 @@ Advanced:
                               number of SNPs)
           --use-vmat          (--solver general) build the full V matrix for the SNP test
           --cc-par0 FLOAT [1e-07]
-                              Null model: convergence when the norm of the parameter change is
-                              below this
+                              Null model: convergence when the norm of the parameter change /
+                              var(y) is below this
           --cc-gra0 FLOAT [1e-06]
-                              Null model: convergence when the norm of the gradient is below
-                              this
+                              Null model: convergence when the norm of the gradient * var(y) is
+                              below this
           --cc-logl0 FLOAT [5e-05]
                               Null model: convergence when the change in logL is below this
           --maxiter INT [30]  Per-SNP refit (--solver eigen --refit): max iterations
@@ -561,7 +562,7 @@ OPTIONS:
           --cc-par0 FLOAT [0.0001]
                               Relative parameter-change convergence threshold
           --cc-gra0 FLOAT [0.01]
-                              Gradient-norm convergence threshold
+                              Convergence threshold for the gradient norm * var(y)
           --cc-logl0 FLOAT [0.01]
                               |Delta(-2logL)| convergence threshold (OR-ed with
                               --cc-par0/--cc-gra0)

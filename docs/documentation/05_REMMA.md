@@ -274,8 +274,8 @@ Only pairs in which both SNPs pass the filters are written. Pairs with stage 1 p
 | `--num-random-snp` | `10000` | `--epis`: random SNP pairs for the $$\gamma$$ calibration; capped at the number of SNPs |
 | `--seed` | `42` | `--epis`: random seed for the calibration pairs |
 | `--maxiter0` | `100` | Max iterations for the null-model fit |
-| `--cc-par0` | `1e-7` | Null-model convergence: norm of the parameter change |
-| `--cc-gra0` | `1e-6` | Null-model convergence: norm of the gradient |
+| `--cc-par0` | `1e-7` | Null-model convergence: norm of the parameter change / var(y) |
+| `--cc-gra0` | `1e-6` | Null-model convergence: norm of the gradient * var(y) |
 | `--cc-logl0` | `5e-5` | Null-model convergence: change in REML log-likelihood |
 
 Set the environment variable `FASTGMA_LOG_LEVEL=debug` to log per-chunk progress.

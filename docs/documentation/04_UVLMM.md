@@ -185,7 +185,7 @@ The `<out>.assoc` columns depend on the solver.
 chr snp pos a1 a2 af N cc_par cc_gra beta se p_score p_lrt p_wald
 ```
 
-`cc_par` and `cc_gra` are the convergence diagnostics of the per-SNP refit (norm of the last parameter change and of the gradient). They are written only with `--refit` (the default) and are `nan` for SNPs that were not re-tested exactly. With `--no-refit` the header is `chr snp pos a1 a2 af N beta se p_score p_lrt p_wald`. For a SNP that was not re-tested exactly, `beta` and `se` are the approximate values and the three p-value columns all hold the approximate p.
+`cc_par` and `cc_gra` are the convergence diagnostics of the per-SNP refit (norm of the last parameter change divided by var(y) and of the gradient multiplied by var(y)). They are written only with `--refit` (the default) and are `nan` for SNPs that were not re-tested exactly. With `--no-refit` the header is `chr snp pos a1 a2 af N beta se p_score p_lrt p_wald`. For a SNP that was not re-tested exactly, `beta` and `se` are the approximate values and the three p-value columns all hold the approximate p.
 
 `--model lm` (exact least-squares test for every SNP):
 
@@ -241,9 +241,9 @@ Grouped under `Advanced` in `--help`; defaults are almost always fine.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--cc-par0` / `--cc-gra0` | `1e-7` / `1e-6` | Null-model parameter / gradient convergence criteria |
+| `--cc-par0` / `--cc-gra0` | `1e-7` / `1e-6` | Null-model convergence criteria: norm of the parameter change / var(y) and of the gradient * var(y), so the fit does not depend on the units of the trait |
 | `--cc-logl0` | `5e-5` | Null-model convergence criterion for the change in log-likelihood |
-| `--cc-par` / `--cc-gra` | `1e-7` / `1e-6` | Per-SNP refit parameter / gradient convergence criteria |
+| `--cc-par` / `--cc-gra` | `1e-7` / `1e-6` | Per-SNP refit convergence criteria, on the same scale |
 | `--start-pos` / `--end-pos` | `0` / `-1` | 0-based index of the first SNP and one past the last SNP to test (`-1` = up to the last SNP); output prefix unchanged |
 | `--npart-snp` | `20` | Minimum number of chunks the tested SNPs are read in; chunks are kept to about 128 MB of genotype codes (memory only; does not change results) |
 | `--num-random-snp` | `2000` | Random SNPs for the approximate-test calibration (capped at the number of SNPs) |

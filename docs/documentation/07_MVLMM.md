@@ -261,10 +261,10 @@ Grouped under `Advanced` in `--help`.
 | `--num-random-snp` | `2000` | Random SNPs for the approximate-test calibration (capped at the number of SNPs) |
 | `--seed` | `42` | Random seed for drawing the calibration SNPs |
 | `--npart-snp` | `20` | Minimum number of chunks the tested SNPs are read in; chunks are kept to about 128 MB of genotype codes (memory only; does not change results) |
-| `--cc-par0` / `--cc-gra0` | `1e-7` / `1e-6` | Null model: parameter-change / gradient-norm convergence criteria |
+| `--cc-par0` / `--cc-gra0` | `1e-7` / `1e-6` | Null model: convergence criteria on the parameter change and the gradient, each covariance scaled by $$sd_i\, sd_j$$ of its two traits, so the fit does not depend on the units of the traits |
 | `--cc-logl0` | `5e-5` | Null model: log-likelihood-change convergence criterion |
 | `--maxiter` | `30` | `--refit` only: max iterations per SNP |
-| `--cc-par` / `--cc-gra` / `--cc-logl` | `1e-7` / `1e-6` / `5e-5` | `--refit` only: per-SNP convergence criteria |
+| `--cc-par` / `--cc-gra` / `--cc-logl` | `1e-7` / `1e-6` / `5e-5` | `--refit` only: per-SNP convergence criteria, on the same scale |
 
 Set the environment variable `FASTGMA_LOG_LEVEL=debug` to log per-block progress.
 
