@@ -350,3 +350,12 @@ fastgma --remma --epis --p-approx-cut 1 \
 ```
 
 This fits the full model for every pair, so keep the range small.
+
+## 7. References
+
+The methods behind `REMMA` are described in:
+
+- Dan Wang, Hui Tang, Jian-Feng Liu, Shizhong Xu, Qin Zhang\*, Chao Ning\*. Rapid epistatic mixed-model association studies by controlling multiple polygenic effects. *Bioinformatics*, 2020.
+- Chao Ning, Dan Wang, Huimin Kang, Raphael Mrode, Lei Zhou, Shizhong Xu, Jian-Feng Liu. A rapid epistatic mixed-model association analysis by linear retransformations of genomic estimated values. *Bioinformatics*, 2018.
+
+\* Corresponding author.

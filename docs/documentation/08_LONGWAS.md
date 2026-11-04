@@ -499,3 +499,13 @@ done
 ```
 
 Each job writes `output/mouse_longwas.4_<i>.assoc` with only the SNPs with `p <= 0.05`. Because `--seed` is fixed, all jobs use the same calibration.
+
+## 8. References
+
+The methods behind `lonGWAS` are described in:
+
+- Chao Ning, Dan Wang, Lei Zhou, Julong Wei, Yuanxin Liu, Huimin Kang, Shengli Zhang, Xiang Zhou, Shizhong Xu, Jian-Feng Liu. Efficient multivariate analysis algorithms for longitudinal genome-wide association studies. *Bioinformatics*, 2019.
+- Chao Ning†, Dan Wang†, Xianrui Zheng†, Qin Zhang, Shengli Zhang, Raphael Mrode, Jian-Feng Liu. Eigen decomposition expedites longitudinal genome-wide association studies for milk production traits in Chinese Holstein. *Genetics Selection Evolution*, 2018.
+- Chao Ning†, Huimin Kang†, Lei Zhou, Dan Wang, Haifei Wang, Aiguo Wang, Jinluan Fu, Shengli Zhang, Jianfeng Liu. Performance gains in genome-wide association studies for longitudinal traits via modeling time-varied effects. *Scientific Reports*, 2017.
+
+† Equal contribution.
