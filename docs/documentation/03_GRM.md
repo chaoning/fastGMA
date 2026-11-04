@@ -201,13 +201,14 @@ Output formats for `--out-fmt`:
 | `0` | `<out>.grm.matrix` | Full $$n \times n$$ text matrix |
 | `1` | `<out>.grm.index_triplet` | `row col value` per line, lower triangle, 1-based indices |
 | `2` | `<out>.grm.iid_triplet` | `IID_row IID_col value` per line, lower triangle |
-| `3` | `<out>.grm.bin` (dense) or `<out>.grm.sp.bin` (sparse) | Dense: GCTA float32 lower triangle. Sparse: records of `int64 row, int64 col, float64 value`, 0-based |
+| `3` | `<out>.grm.bin` (dense) or `<out>.grm.sp.bin` (sparse) | Dense: GCTA float32 lower triangle. Sparse: the 8 bytes `FGMASPF4`, then records of `int64 row, int64 col, float32 value`, 0-based |
 
 Notes:
 
 - **`--merge`.** The blocks are read from `<grm>.<n>_<i>.grm.*` for `i = 1..n` and the merged GRM is written to `<grm>.grm.*`. `.grm.N.bin` is merged when the blocks have it. `--out` only names the log file (without it, the log goes to the console only).
 - **`--pca`.** The files follow the GCTA layout. `<out>.eigenval` has one eigenvalue per line, largest first. `<out>.eigenvec` has one line per sample in `.grm.id` order with the columns `FID IID PC1 PC2 ...` (tab-separated, no header line). With a one-column `.grm.id`, the IID is written in both ID columns. `--num-pc 20` (default) computes only the 20 leading eigenpairs, which is faster than a full decomposition; `--num-pc 0` writes all of them.
 - **`--make-epis`.** The two GRMs must have the same `.grm.id` order. The output is float32 `<out>.grm.bin` plus `<out>.grm.id`; `.grm.N` is the concatenation of the two input `.grm.N` files when both exist. No `.grm.N.bin` is written.
+- **Older sparse files.** A `.grm.sp.bin` that does not start with `FGMASPF4` holds `float64` values and no header. These files are still read, and `--reformat --sparse --out-fmt 3` converts one to the current format.
 - **`--group`.** The output goes next to the input GRM, not to `--out`. Besides the group tables, it writes a sparse GRM (`.grm.sp.bin`) that keeps only within-group pairs.
 - **`--make-inv`.** The inverse is computed with a LAPACK Cholesky factorization (`dpotrf`, `dpotri`). A GRM centred by sample allele frequencies has rank at most $$n - 1$$, so it cannot be inverted without a diagonal value. That is why `--val` defaults to `0.001` here, while `--make-grm` itself adds nothing. With missing genotypes the GRM can have slightly negative eigenvalues (Section 1). If the matrix is not positive definite, `--make-inv` stops, reports the smallest eigenvalue and asks to rerun with `--val` above a given value. With `--out-fmt 3` the inverse is stored as float32, like every `.grm.bin`.
 
