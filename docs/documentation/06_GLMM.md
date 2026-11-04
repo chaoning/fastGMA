@@ -139,7 +139,7 @@ chr	snp	pos	a1	a2	af	N	N_case	N_ctrl	af_case	af_ctrl	beta	se	p_normal	p
 | `p_normal` | p-value of the score test by the normal (chi-square) approximation |
 | `p` | Final p-value: SPA when `p_normal` is below `--spa-cut`, otherwise `p_normal` |
 
-The effect, SE and p-value columns are `nan` when the SNP fails the `--maf` or `--missing-rate` filter or gives a non-finite statistic. If the saddlepoint equation cannot be solved for a SNP, `p` keeps `p_normal`; the log counts these SNPs. With `--p-cut` below `1`, a row is written when `p` is at or below the cut.
+The effect, SE and p-value columns are `nan` when the SNP fails the `--maf` or `--missing-rate` filter or gives a non-finite statistic. If the saddlepoint equation cannot be solved for a SNP, `p` keeps `p_normal`; the log counts these SNPs. A score at or past the largest value it can take under independent records (with few carriers, all of them cases or all controls) has no saddlepoint; that tail is then the exact probability of this most extreme outcome. With `--p-cut` below `1`, a row is written when `p` is at or below the cut.
 
 ### Convergence
 

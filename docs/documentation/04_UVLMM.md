@@ -60,7 +60,7 @@ Rules checked at start-up:
 - `--model repeat` cannot be combined with `--random`.
 - `--refit` is accepted only with `--solver eigen`.
 
-**Per-SNP refit (`--solver eigen`).** By default (`--refit`), each SNP that is re-tested exactly gets its own REML fit of the variance components with the SNP in the model. Score, likelihood-ratio and Wald p-values are then reported. With `--no-refit` the exact test uses the null variances, so the Wald p equals the score p. `--refit --p-approx-cut 1` refits every SNP.
+**Per-SNP refit (`--solver eigen`).** By default (`--refit`), each SNP that is re-tested exactly gets its own REML fit of the variance components with the SNP in the model. Score, likelihood-ratio and Wald p-values are then reported. The likelihood ratio is evaluated at the REML variance estimates of each model, not at their ML estimates, so `p_lrt` approximates the ML likelihood-ratio test. With few individuals or many covariates it can differ from that test, and a negative ratio is set to 0 (`p_lrt` = 1). `p_wald` does not have this limitation. With `--no-refit` the exact test uses the null variances, so the Wald p equals the score p. `--refit --p-approx-cut 1` refits every SNP.
 
 ## 3. Inputs
 
