@@ -504,8 +504,6 @@ Each job writes `output/mouse_longwas.4_<i>.assoc` with only the SNPs with `p <=
 
 The methods behind `lonGWAS` are described in:
 
-- Chao Ning, Dan Wang, Lei Zhou, Julong Wei, Yuanxin Liu, Huimin Kang, Shengli Zhang, Xiang Zhou, Shizhong Xu, Jian-Feng Liu. Efficient multivariate analysis algorithms for longitudinal genome-wide association studies. *Bioinformatics*, 2019.
-- Chao Ning†, Dan Wang†, Xianrui Zheng†, Qin Zhang, Shengli Zhang, Raphael Mrode, Jian-Feng Liu. Eigen decomposition expedites longitudinal genome-wide association studies for milk production traits in Chinese Holstein. *Genetics Selection Evolution*, 2018.
-- Chao Ning†, Huimin Kang†, Lei Zhou, Dan Wang, Haifei Wang, Aiguo Wang, Jinluan Fu, Shengli Zhang, Jianfeng Liu. Performance gains in genome-wide association studies for longitudinal traits via modeling time-varied effects. *Scientific Reports*, 2017.
-
-† Equal contribution.
+- Chao Ning, Dan Wang, Lei Zhou, Julong Wei, Yuanxin Liu, Huimin Kang, Shengli Zhang, Xiang Zhou, Shizhong Xu, Jian-Feng Liu. Efficient multivariate analysis algorithms for longitudinal genome-wide association studies. *Bioinformatics*, 2019. [doi:10.1093/bioinformatics/btz304](https://doi.org/10.1093/bioinformatics/btz304)
+- Chao Ning, Dan Wang, Xianrui Zheng, Qin Zhang, Shengli Zhang, Raphael Mrode, Jian-Feng Liu. Eigen decomposition expedites longitudinal genome-wide association studies for milk production traits in Chinese Holstein. *Genetics Selection Evolution*, 2018. [doi:10.1186/s12711-018-0383-0](https://doi.org/10.1186/s12711-018-0383-0)
+- Chao Ning, Huimin Kang, Lei Zhou, Dan Wang, Haifei Wang, Aiguo Wang, Jinluan Fu, Shengli Zhang, Jianfeng Liu. Performance gains in genome-wide association studies for longitudinal traits via modeling time-varied effects. *Scientific Reports*, 2017. [doi:10.1038/s41598-017-00638-2](https://doi.org/10.1038/s41598-017-00638-2)
