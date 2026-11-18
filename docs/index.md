@@ -52,6 +52,10 @@ fastgma --uvlmm --grm test --bfile test \
 
 See [Installation](documentation/02_installation/) to download `fastgma`.
 
+## Citation
+
+There is no paper on fastGMA as a whole yet. Please cite the software with the version you ran, and Wang et al. (2020, *Bioinformatics*). If you use REMMA or lonGWAS, please also cite their method papers. See [Citation](documentation/10_Citation/) for the full references and BibTeX.
+
 ## Contact
 
 If you have questions, please open an issue on [GitHub](https://github.com/chaoning/fastGMA/issues) or email ningchao91@gmail.com.

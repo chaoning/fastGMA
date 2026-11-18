@@ -38,6 +38,8 @@ nav:
     url: /documentation/08_LONGWAS/
   - title: "fastREML"
     url: /documentation/09_FASTREML/
+  - title: "Citation"
+    url: /documentation/10_Citation/
   - title: "Ask AI"
     url: /ask-ai/
 

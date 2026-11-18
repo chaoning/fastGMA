@@ -10,6 +10,8 @@
 
 The user guide, with one page per module, is at <https://chaoning.github.io/fastGMA>.
 
+To cite fastGMA, see [Citation](https://chaoning.github.io/fastGMA/documentation/10_Citation/) or use **Cite this repository** on the GitHub page.
+
 ## License
 
 fastGMA is free for academic and non-commercial use. Commercial use requires a license; please contact ningchao91@gmail.com. See [LICENSE.md](LICENSE.md) for the full terms, and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the third-party libraries included in the executable.

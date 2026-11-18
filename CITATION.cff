@@ -1,0 +1,158 @@
+cff-version: 1.2.0
+message: >-
+  If you use fastGMA, please cite the software with the version printed by
+  `fastgma --version`, and the paper under preferred-citation (Wang et al.
+  2020). If you use REMMA or lonGWAS, please also cite the method papers
+  listed under references; see
+  https://chaoning.github.io/fastGMA/documentation/10_Citation/
+type: software
+title: >-
+  fastGMA: Fast genomic mixed-model analysis for genome-wide association
+  studies and genomic prediction of complex traits
+authors:
+  - family-names: Ning
+    given-names: Chao
+url: "https://chaoning.github.io/fastGMA"
+repository-artifact: "https://github.com/chaoning/fastGMA"
+license-url: "https://github.com/chaoning/fastGMA/blob/main/LICENSE.md"
+keywords:
+  - genome-wide association study
+  - linear mixed model
+  - genomic prediction
+  - heritability
+preferred-citation:
+  type: article
+  title: >-
+    Rapid epistatic mixed-model association studies by controlling multiple
+    polygenic effects
+  authors:
+    - family-names: Wang
+      given-names: Dan
+    - family-names: Tang
+      given-names: Hui
+    - family-names: Liu
+      given-names: Jian-Feng
+    - family-names: Xu
+      given-names: Shizhong
+    - family-names: Zhang
+      given-names: Qin
+    - family-names: Ning
+      given-names: Chao
+  journal: Bioinformatics
+  volume: 36
+  issue: 19
+  start: 4833
+  end: 4837
+  year: 2020
+  doi: 10.1093/bioinformatics/btaa610
+references:
+  - type: article
+    title: >-
+      A rapid epistatic mixed-model association analysis by linear
+      retransformations of genomic estimated values
+    authors:
+      - family-names: Ning
+        given-names: Chao
+      - family-names: Wang
+        given-names: Dan
+      - family-names: Kang
+        given-names: Huimin
+      - family-names: Mrode
+        given-names: Raphael
+      - family-names: Zhou
+        given-names: Lei
+      - family-names: Xu
+        given-names: Shizhong
+      - family-names: Liu
+        given-names: Jian-Feng
+    journal: Bioinformatics
+    volume: 34
+    issue: 11
+    start: 1817
+    end: 1825
+    year: 2018
+    doi: 10.1093/bioinformatics/bty017
+  - type: article
+    title: >-
+      Efficient multivariate analysis algorithms for longitudinal genome-wide
+      association studies
+    authors:
+      - family-names: Ning
+        given-names: Chao
+      - family-names: Wang
+        given-names: Dan
+      - family-names: Zhou
+        given-names: Lei
+      - family-names: Wei
+        given-names: Julong
+      - family-names: Liu
+        given-names: Yuanxin
+      - family-names: Kang
+        given-names: Huimin
+      - family-names: Zhang
+        given-names: Shengli
+      - family-names: Zhou
+        given-names: Xiang
+      - family-names: Xu
+        given-names: Shizhong
+      - family-names: Liu
+        given-names: Jian-Feng
+    journal: Bioinformatics
+    volume: 35
+    issue: 23
+    start: 4879
+    end: 4885
+    year: 2019
+    doi: 10.1093/bioinformatics/btz304
+  - type: article
+    title: >-
+      Eigen decomposition expedites longitudinal genome-wide association
+      studies for milk production traits in Chinese Holstein
+    authors:
+      - family-names: Ning
+        given-names: Chao
+      - family-names: Wang
+        given-names: Dan
+      - family-names: Zheng
+        given-names: Xianrui
+      - family-names: Zhang
+        given-names: Qin
+      - family-names: Zhang
+        given-names: Shengli
+      - family-names: Mrode
+        given-names: Raphael
+      - family-names: Liu
+        given-names: Jian-Feng
+    journal: Genetics Selection Evolution
+    volume: 50
+    start: 12
+    year: 2018
+    doi: 10.1186/s12711-018-0383-0
+  - type: article
+    title: >-
+      Performance gains in genome-wide association studies for longitudinal
+      traits via modeling time-varied effects
+    authors:
+      - family-names: Ning
+        given-names: Chao
+      - family-names: Kang
+        given-names: Huimin
+      - family-names: Zhou
+        given-names: Lei
+      - family-names: Wang
+        given-names: Dan
+      - family-names: Wang
+        given-names: Haifei
+      - family-names: Wang
+        given-names: Aiguo
+      - family-names: Fu
+        given-names: Jinluan
+      - family-names: Zhang
+        given-names: Shengli
+      - family-names: Liu
+        given-names: Jianfeng
+    journal: Scientific Reports
+    volume: 7
+    start: 590
+    year: 2017
+    doi: 10.1038/s41598-017-00638-2
