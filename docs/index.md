@@ -54,7 +54,18 @@ See [Installation](documentation/02_installation/) to download `fastgma`.
 
 ## Citation
 
-There is no paper on fastGMA as a whole yet. Please cite the software with the version you ran, and Wang et al. (2020, *Bioinformatics*). If you use REMMA or lonGWAS, please also cite their method papers. See [Citation](documentation/10_Citation/) for the full references and BibTeX.
+If you use fastGMA, please cite:
+
+- Dan Wang, Hui Tang, Jian-Feng Liu, Shizhong Xu, Qin Zhang, Chao Ning. Rapid epistatic mixed-model association studies by controlling multiple polygenic effects. *Bioinformatics* 36(19):4833–4837, 2020. [doi:10.1093/bioinformatics/btaa610](https://doi.org/10.1093/bioinformatics/btaa610)
+
+If you use the modules below, please also cite the papers on their methods:
+
+- `REMMA`:
+  - Chao Ning, Dan Wang, Huimin Kang, Raphael Mrode, Lei Zhou, Shizhong Xu, Jian-Feng Liu. A rapid epistatic mixed-model association analysis by linear retransformations of genomic estimated values. *Bioinformatics* 34(11):1817–1825, 2018. [doi:10.1093/bioinformatics/bty017](https://doi.org/10.1093/bioinformatics/bty017)
+- `lonGWAS`:
+  - Chao Ning, Dan Wang, Lei Zhou, Julong Wei, Yuanxin Liu, Huimin Kang, Shengli Zhang, Xiang Zhou, Shizhong Xu, Jian-Feng Liu. Efficient multivariate analysis algorithms for longitudinal genome-wide association studies. *Bioinformatics* 35(23):4879–4885, 2019. [doi:10.1093/bioinformatics/btz304](https://doi.org/10.1093/bioinformatics/btz304)
+  - Chao Ning, Dan Wang, Xianrui Zheng, Qin Zhang, Shengli Zhang, Raphael Mrode, Jian-Feng Liu. Eigen decomposition expedites longitudinal genome-wide association studies for milk production traits in Chinese Holstein. *Genetics Selection Evolution* 50:12, 2018. [doi:10.1186/s12711-018-0383-0](https://doi.org/10.1186/s12711-018-0383-0)
+  - Chao Ning, Huimin Kang, Lei Zhou, Dan Wang, Haifei Wang, Aiguo Wang, Jinluan Fu, Shengli Zhang, Jianfeng Liu. Performance gains in genome-wide association studies for longitudinal traits via modeling time-varied effects. *Scientific Reports* 7:590, 2017. [doi:10.1038/s41598-017-00638-2](https://doi.org/10.1038/s41598-017-00638-2)
 
 ## Contact
 

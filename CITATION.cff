@@ -1,10 +1,9 @@
 cff-version: 1.2.0
 message: >-
-  If you use fastGMA, please cite the software with the version printed by
-  `fastgma --version`, and the paper under preferred-citation (Wang et al.
-  2020). If you use REMMA or lonGWAS, please also cite the method papers
-  listed under references; see
-  https://chaoning.github.io/fastGMA/documentation/10_Citation/
+  If you use fastGMA, please cite the paper under preferred-citation (Wang
+  et al. 2020). If you use REMMA or lonGWAS, please also cite their method
+  papers listed under references; see
+  https://chaoning.github.io/fastGMA/#citation
 type: software
 title: >-
   fastGMA: Fast genomic mixed-model analysis for genome-wide association

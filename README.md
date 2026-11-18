@@ -10,7 +10,7 @@
 
 The user guide, with one page per module, is at <https://chaoning.github.io/fastGMA>.
 
-To cite fastGMA, see [Citation](https://chaoning.github.io/fastGMA/documentation/10_Citation/) or use **Cite this repository** on the GitHub page.
+If you use fastGMA, please cite Wang et al. (2020, *Bioinformatics*, [doi:10.1093/bioinformatics/btaa610](https://doi.org/10.1093/bioinformatics/btaa610)); see [Citation](https://chaoning.github.io/fastGMA/#citation) for the papers to cite for specific modules.
 
 ## License
 
